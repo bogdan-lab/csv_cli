@@ -67,8 +67,8 @@ def get_surfaces_for_breps(brep_to_name):
 
 def download_geo_entities():
     '''
-       Returns geo_plane = [[plane_tag, plane_bounding_box]]
-       and geo_vols = [[volume_tag, volume_bounding_box]]
+       Returns geo_plane = [[plane_tag, plane_bounding_box], ...]
+       and geo_vols = [[volume_tag, volume_bounding_box], ...]
     '''
     dimTags_pl = gmsh.model.getEntities(2)
     geo_planes = []
@@ -113,7 +113,7 @@ def write_surfaces(name_to_planes, geo_file):
         f.write('Physical Surface("%s") = { %i' % (name, name_to_planes[name][0]))
         for i in range(1, len(name_to_planes[name])):
             f.write(", %i" % name_to_planes[name][i])
-        f.write("}\n")
+        f.write("};\n")
     f.close()
 
 
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     gmsh.initialize()
     gmsh.open(GEO_FILE)
     geo_planes, geo_vols = download_geo_entities()
-    
+    gmsh.finalize()
     #paint stuff
     name_to_planes = get_name_dict(brep_to_name)    #dictionary name --> tag
     for plane in geo_planes:
