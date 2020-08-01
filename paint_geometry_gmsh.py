@@ -27,6 +27,9 @@ def get_brep_file_names(geometry_file):
 
 
 def get_other_dimtags(current_brep, brep_to_dimtags):
+    '''
+    returns list of dimtags without the current_brep
+    '''
     dimtags = []
     for k in brep_to_dimtags.keys():
         if k != current_brep:
@@ -117,11 +120,54 @@ def write_surfaces(name_to_planes, geo_file):
     f.close()
 
 
+def read_boxes_in_geometry(geom_file):
+    '''
+    Function will parse geometry file for Box()
+    '''
+    boxes = {}
+    f = open(geom_file, "r")
+    for line in f:
+        line = line.split("//")[0]
+        if line=="":
+            continue
+        if ("Box(" in line) and ("=" in line) and ("{" in line) and ("};" in line):
+            box_id = int(line.split('(')[1].split(')')[0])
+            coors = line.split('{')[1].split('}')[0].split(',')
+            for i in range(len(coors)):
+                coors[i] = float(coors[i])
+            boxes[box_id] = coors
+    f.close()
+    return boxes
+
+
+def get_main_box_info(geom_file, main_box_mark=100):
+    '''
+    main_box_mark - Box id of the main box
+    All other boxes in the file will be treated as simple main box corrections
+    and not like geometry components!
+    main_box_info = {"main": [x, y, z, dx, dy, dz], "corrections":[[x,y,z,...], ...]}
+    '''
+    boxes = read_boxes_in_geometry(geom_file)
+    main_box_info = {}
+    main_box_info["corrections"] = []
+    for id_ in boxes.keys():
+        if id_ == main_box_mark:
+            main_box_info["main"] = boxes[id_]
+        else:
+            main_box_info["corrections"].append(boxes[id_])
+    if len(main_box_info.keys())<2:
+        raise Warning("I did not found main box in geometry file. Chack its ID %i" % main_box_mark)
+    return main_box_info
+    
+
+
 if __name__ == "__main__":
     GEO_FILE = "rme_gmsh.geo"    
 
     #get all brep files
     brep_to_name = get_brep_file_names(GEO_FILE)
+    #get main box stuff
+    main_box_info = get_main_box_info(GEO_FILE)
     #get brep file translations
     #apply brep file translations and subtract files --> bounding boxes for all surfaces
     brep_to_bnd_box = get_surfaces_for_breps(brep_to_name)
