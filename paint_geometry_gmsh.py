@@ -37,7 +37,26 @@ def get_other_dimtags(current_brep, brep_to_dimtags):
     return dimtags
 
 
-def get_surfaces_for_one_component(brep_file, brep_to_name):
+def construct_main_box(main_box_info):
+    '''Function will construct in the current gmsh model main box according to main_box_info
+    '''
+    main_tag = gmsh.model.occ.addBox(main_box_info["main"][0],
+                                     main_box_info["main"][1],
+                                     main_box_info["main"][2],
+                                     main_box_info["main"][3],
+                                     main_box_info["main"][4],
+                                     main_box_info["main"][5], tag=-1)
+    main_box_dimtags = [(3, main_tag)]
+    corrections = []
+    for box in main_box_info["corrections"]:
+        tag = gmsh.model.occ.addBox(box[0], box[1], box[2], box[3], box[4], box[5], tag=-1)
+        corrections.append((3, tag))
+    if len(corrections)>0:
+        main_box_dimtags = gmsh.model.occ.cut(main_box_dimtags, corrections, removeObject=True, removeTool=True)
+    return main_box_dimtags
+
+
+def get_surfaces_for_one_component(brep_file, brep_to_name, main_box_info):
     gmsh.initialize()
     brep_to_dimtags = {}
     for brep in brep_to_name.keys():
@@ -47,8 +66,14 @@ def get_surfaces_for_one_component(brep_file, brep_to_name):
     #here everything is imported
     current_dimtags = brep_to_dimtags[brep_file]
     other_dimtags = get_other_dimtags(brep_file, brep_to_dimtags)
-    result_dimtags, UNUSED_map = gmsh.model.occ.cut(current_dimtags, other_dimtags, removeObject=True, removeTool=True)
+    cut_dimtags, UNUSED_map = gmsh.model.occ.cut(current_dimtags, other_dimtags, removeObject=True, removeTool=True)
     gmsh.model.occ.synchronize()
+    #now intersect the component with main_box -> get surfaces which actually are present in the calculation area
+    main_box_dimtags = construct_main_box(main_box_info)
+    gmsh.model.occ.synchronize()
+    intersect_dimtags, UNUSED_map = gmsh.model.occ.intersect(main_box_dimtags, cut_dimtags, tag=-1, removeObject=True, removeTool=True)
+    gmsh.model.occ.synchronize()
+    #now in current model only surfaces which will actually be in calculation area are presented
     bounding_boxes = []
     dimTags = gmsh.model.getEntities(2)
     for dt in dimTags:
@@ -58,10 +83,14 @@ def get_surfaces_for_one_component(brep_file, brep_to_name):
     return bounding_boxes, full_bounding_box
 
 
-def get_surfaces_for_breps(brep_to_name):
+def get_surfaces_for_breps(brep_to_name, main_box_info):
+    ''' Function will return dictionary with 
+       brep_file_name -> {"surfaces": its surface bounding boxes, "full_component": bounding box over all surfaces together}
+       Function takes into account the component crossection with the main box and component translations applied in geometry file
+    '''
     brep_to_bnd_box = {}
     for brep in brep_to_name.keys():
-        bounding_boxes, full_bounding_box = get_surfaces_for_one_component(brep, brep_to_name)
+        bounding_boxes, full_bounding_box = get_surfaces_for_one_component(brep, brep_to_name, main_box_info)
         brep_to_bnd_box[brep] = {}
         brep_to_bnd_box[brep]["surfaces"] = bounding_boxes
         brep_to_bnd_box[brep]["full_component"] = full_bounding_box
@@ -90,13 +119,16 @@ def check_bnd_box_equal(lhs, rhs, epsilon=1e-9):
 
 
 def find_brep_file_for_plane(plane, brep_to_bnd_box):
-    '''Looking for plane --> we are no checking here "full_bounding_box" key"'''
+    '''Looking for plane --> we are not checking here "full_bounding_box" key"
+       Not all surfaces are constructed from brep files --> 
+       if surface is not found function returns False
+    '''
     for brep in brep_to_bnd_box.keys():
         for bnd_box in brep_to_bnd_box[brep]["surfaces"]:
             if check_bnd_box_equal(bnd_box, plane[1], epsilon=1e-9):
                 return brep
-    raise Warning("I have not found brep file for plane tag %i" % plane[0])
-    return None
+    print("I have not found brep file for plane tag %i" % plane[0])
+    return False
 
 
 def get_name_dict(brep_to_name):
@@ -163,14 +195,15 @@ def get_main_box_info(geom_file, main_box_mark=100):
 
 if __name__ == "__main__":
     GEO_FILE = "rme_gmsh.geo"    
-
+    MAIN_BOX_MARK=100
+    
     #get all brep files
     brep_to_name = get_brep_file_names(GEO_FILE)
     #get main box stuff
-    main_box_info = get_main_box_info(GEO_FILE)
+    main_box_info = get_main_box_info(GEO_FILE, MAIN_BOX_MARK)
     #get brep file translations
     #apply brep file translations and subtract files --> bounding boxes for all surfaces
-    brep_to_bnd_box = get_surfaces_for_breps(brep_to_name)
+    brep_to_bnd_box = get_surfaces_for_breps(brep_to_name, main_box_info)
     #Load gmsh geometry for calculations
     imitate_gmsh_reload(GEO_FILE)
     gmsh.initialize()
@@ -181,8 +214,9 @@ if __name__ == "__main__":
     name_to_planes = get_name_dict(brep_to_name)    #dictionary name --> tag
     for plane in geo_planes:
         brep_it_belongs = find_brep_file_for_plane(plane, brep_to_bnd_box)
-        name = brep_to_name[brep_it_belongs]
-        name_to_planes[name].append(plane[0])
+        if brep_it_belongs:
+            name = brep_to_name[brep_it_belongs]
+            name_to_planes[name].append(plane[0])
     
     #write physical groups to file
     write_surfaces(name_to_planes, GEO_FILE)
