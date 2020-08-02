@@ -56,7 +56,7 @@ def construct_main_box(main_box_info):
     return main_box_dimtags
 
 
-def get_surfaces_for_one_component(brep_file, brep_to_name, main_box_info):
+def get_surfaces_for_one_component(brep_file, brep_to_name, brep_to_translation, main_box_info):
     gmsh.initialize()
     brep_to_dimtags = {}
     for brep in brep_to_name.keys():
@@ -64,6 +64,12 @@ def get_surfaces_for_one_component(brep_file, brep_to_name, main_box_info):
         brep_to_dimtags[brep] = dimtags
         gmsh.model.occ.synchronize()
     #here everything is imported
+    #Lets apply translations
+    for brep in brep_to_translation.keys():
+        dimtags = brep_to_dimtags[brep]
+        gmsh.model.occ.translate(dimtags, brep_to_translation[brep][0], brep_to_translation[brep][1], brep_to_translation[brep][2])
+        gmsh.model.occ.synchronize()
+    #Now lets crossect all components
     current_dimtags = brep_to_dimtags[brep_file]
     other_dimtags = get_other_dimtags(brep_file, brep_to_dimtags)
     cut_dimtags, UNUSED_map = gmsh.model.occ.cut(current_dimtags, other_dimtags, removeObject=True, removeTool=True)
@@ -75,22 +81,22 @@ def get_surfaces_for_one_component(brep_file, brep_to_name, main_box_info):
     gmsh.model.occ.synchronize()
     #now in current model only surfaces which will actually be in calculation area are presented
     bounding_boxes = []
-    dimTags = gmsh.model.getEntities(2)
-    for dt in dimTags:
+    dimtags = gmsh.model.getEntities(2)
+    for dt in dimtags:
         bounding_boxes.append(np.array(gmsh.model.getBoundingBox(dt[0], dt[1])))
     full_bounding_box = np.array(gmsh.model.getBoundingBox(-1, -1))
     gmsh.finalize()
     return bounding_boxes, full_bounding_box
 
 
-def get_surfaces_for_breps(brep_to_name, main_box_info):
+def get_surfaces_for_breps(brep_to_name, brep_to_translation, main_box_info):
     ''' Function will return dictionary with 
        brep_file_name -> {"surfaces": its surface bounding boxes, "full_component": bounding box over all surfaces together}
        Function takes into account the component crossection with the main box and component translations applied in geometry file
     '''
     brep_to_bnd_box = {}
     for brep in brep_to_name.keys():
-        bounding_boxes, full_bounding_box = get_surfaces_for_one_component(brep, brep_to_name, main_box_info)
+        bounding_boxes, full_bounding_box = get_surfaces_for_one_component(brep, brep_to_name, brep_to_translation, main_box_info)
         brep_to_bnd_box[brep] = {}
         brep_to_bnd_box[brep]["surfaces"] = bounding_boxes
         brep_to_bnd_box[brep]["full_component"] = full_bounding_box
@@ -192,6 +198,62 @@ def get_main_box_info(geom_file, main_box_mark=100):
     return main_box_info
     
 
+def parse_translation_buffers(translation_lines):
+    name_to_translations = {}
+    for trans in translation_lines:
+        coors = trans.split('{')[1].split('}')[0].replace(' ', '').split(',')
+        for i in range(len(coors)):
+            coors[i] = float(coors[i])
+        coors = np.array(coors)
+        names = trans.split('{')[3].split('}')[0].replace(' ', '').split(',')
+        for n in names:
+            if not (n in name_to_translations.keys()):
+                name_to_translations[n] = []
+            name_to_translations[n].append(coors)
+    for k in name_to_translations.keys():
+        name_to_translations[k] = sum(name_to_translations[k])
+    return name_to_translations
+
+
+def read_translations_in_geometry(geom_file):
+    '''Function will parse geometry file for translation information'''
+    f = open(geom_file, 'r')
+    translation_lines = []
+    save_trans_flag = False
+    tmp_trans = ''
+    count_open = 0
+    count_close = 0
+    for line in f:
+        line = line.split("//")[0]
+        if line=="":
+            continue
+        if "Translate" in line:
+            save_trans_flag=True
+        if save_trans_flag:
+            count_open  += line.count('{') 
+            count_close += line.count('}') 
+            tmp_trans+=line.replace('\n', '')
+        if count_open==3 and count_close==3:
+            #translation buffer is read
+            save_trans_flag=False
+            translation_lines.append(tmp_trans)
+            tmp_trans = ''
+            count_open = 0
+            count_close = 0
+    name_to_translations = parse_translation_buffers(translation_lines)
+    f.close()
+    return name_to_translations
+
+def get_component_translations(name_to_brep, geom_file):
+    '''Returns dictionary with information about translations for each brep file
+    '''
+    brep_to_translation = {}
+    name_to_translations = read_translations_in_geometry(geom_file)
+    for n in name_to_translations.keys():
+        brep_file = name_to_brep[n]
+        brep_to_translation[brep_file] = name_to_translations[n]
+    return brep_to_translation
+
 
 if __name__ == "__main__":
     GEO_FILE = "rme_gmsh.geo"    
@@ -199,11 +261,13 @@ if __name__ == "__main__":
     
     #get all brep files
     brep_to_name = get_brep_file_names(GEO_FILE)
+    name_to_brep = dict([(value, key) for key, value in brep_to_name.items()])
     #get main box stuff
     main_box_info = get_main_box_info(GEO_FILE, MAIN_BOX_MARK)
     #get brep file translations
+    brep_to_translation = get_component_translations(name_to_brep, GEO_FILE)
     #apply brep file translations and subtract files --> bounding boxes for all surfaces
-    brep_to_bnd_box = get_surfaces_for_breps(brep_to_name, main_box_info)
+    brep_to_bnd_box = get_surfaces_for_breps(brep_to_name, brep_to_translation, main_box_info)
     #Load gmsh geometry for calculations
     imitate_gmsh_reload(GEO_FILE)
     gmsh.initialize()
