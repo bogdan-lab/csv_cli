@@ -52,12 +52,14 @@ def construct_main_box(main_box_info):
         tag = gmsh.model.occ.addBox(box[0], box[1], box[2], box[3], box[4], box[5], tag=-1)
         corrections.append((3, tag))
     if len(corrections)>0:
-        main_box_dimtags = gmsh.model.occ.cut(main_box_dimtags, corrections, removeObject=True, removeTool=True)
+        main_box_dimtags, UNUSED_map = gmsh.model.occ.cut(main_box_dimtags, corrections, removeObject=True, removeTool=True)
     return main_box_dimtags
 
 
 def get_surfaces_for_one_component(brep_file, brep_to_name, brep_to_translation, main_box_info):
+    print(brep_file)
     gmsh.initialize()
+    gmsh.option.setNumber("Geometry.OCCScaling", 0.1)
     brep_to_dimtags = {}
     for brep in brep_to_name.keys():
         dimtags = gmsh.model.occ.importShapes(brep, highestDimOnly=True, format="brep")
@@ -84,7 +86,9 @@ def get_surfaces_for_one_component(brep_file, brep_to_name, brep_to_translation,
     dimtags = gmsh.model.getEntities(2)
     for dt in dimtags:
         bounding_boxes.append(np.array(gmsh.model.getBoundingBox(dt[0], dt[1])))
-    full_bounding_box = np.array(gmsh.model.getBoundingBox(-1, -1))
+    full_bounding_box = []
+    if len(intersect_dimtags)>0:
+        full_bounding_box = np.array(gmsh.model.getBoundingBox(-1, -1))
     gmsh.finalize()
     return bounding_boxes, full_bounding_box
 
