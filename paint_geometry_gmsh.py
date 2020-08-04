@@ -1,5 +1,6 @@
 import gmsh
 import numpy as np
+import json
 
 
 def imitate_gmsh_reload(fname):
@@ -13,6 +14,7 @@ def get_brep_file_names(geometry_file):
     '''Returns dictionary with name of loaded brep_file pointing to
        the name of the component in the gmsh geomerty file'''
     brep_to_name = {}
+    name_to_brep = {}
     f = open(geometry_file, "r")
     for line in f:
         line = line.split("//")[0]
@@ -22,18 +24,19 @@ def get_brep_file_names(geometry_file):
             fancy_name = line.split("=")[0].replace(" ", "")
             brep = line.split("\"")[1].replace(" ", "")    
             brep_to_name[brep] = fancy_name
+            name_to_brep[fancy_name] = brep
     f.close()
-    return brep_to_name
+    return brep_to_name, name_to_brep
 
 
-def get_other_dimtags(current_brep, brep_to_dimtags):
+def get_other_dimtags(current_comp, component_to_dimtags):
     '''
     returns list of dimtags without the current_brep
     '''
     dimtags = []
-    for k in brep_to_dimtags.keys():
-        if k != current_brep:
-            dimtags.extend(brep_to_dimtags[k])
+    for k in component_to_dimtags.keys():
+        if k != current_comp:
+            dimtags.extend(component_to_dimtags[k])
     return dimtags
 
 
@@ -56,24 +59,33 @@ def construct_main_box(main_box_info):
     return main_box_dimtags
 
 
-def get_surfaces_for_one_component(brep_file, brep_to_name, brep_to_translation, main_box_info):
-    print(brep_file)
+def get_surfaces_for_one_component(curr_comp_id, component_boxes, brep_to_name, component_to_translation, main_box_info):
+    print("Working on component %s" % curr_comp_id)
     gmsh.initialize()
     gmsh.option.setNumber("Geometry.OCCScaling", 0.1)
-    brep_to_dimtags = {}
+    component_to_dimtags = {}
     for brep in brep_to_name.keys():
         dimtags = gmsh.model.occ.importShapes(brep, highestDimOnly=True, format="brep")
-        brep_to_dimtags[brep] = dimtags
+        component_to_dimtags[brep] = dimtags
+        gmsh.model.occ.synchronize()
+    for box in component_boxes.keys():
+        tag = gmsh.model.occ.addBox(component_boxes[box][0], 
+                                    component_boxes[box][1],
+                                    component_boxes[box][2],
+                                    component_boxes[box][3],
+                                    component_boxes[box][4],
+                                    component_boxes[box][5], tag=-1)
+        component_to_dimtags[box] = [(3, tag)]
         gmsh.model.occ.synchronize()
     #here everything is imported
     #Lets apply translations
-    for brep in brep_to_translation.keys():
-        dimtags = brep_to_dimtags[brep]
-        gmsh.model.occ.translate(dimtags, brep_to_translation[brep][0], brep_to_translation[brep][1], brep_to_translation[brep][2])
+    for comp in component_to_translation.keys():
+        dimtags = component_to_dimtags[comp]
+        gmsh.model.occ.translate(dimtags, component_to_translation[comp][0], component_to_translation[comp][1], component_to_translation[comp][2])
         gmsh.model.occ.synchronize()
     #Now lets crossect all components
-    current_dimtags = brep_to_dimtags[brep_file]
-    other_dimtags = get_other_dimtags(brep_file, brep_to_dimtags)
+    current_dimtags = component_to_dimtags[curr_comp_id]
+    other_dimtags = get_other_dimtags(curr_comp_id, component_to_dimtags)
     cut_dimtags, UNUSED_map = gmsh.model.occ.cut(current_dimtags, other_dimtags, removeObject=True, removeTool=True)
     gmsh.model.occ.synchronize()
     #now intersect the component with main_box -> get surfaces which actually are present in the calculation area
@@ -93,18 +105,18 @@ def get_surfaces_for_one_component(brep_file, brep_to_name, brep_to_translation,
     return bounding_boxes, full_bounding_box
 
 
-def get_surfaces_for_breps(brep_to_name, brep_to_translation, main_box_info):
+def get_surfaces_for_components(component_to_fancy, component_boxes, brep_to_name, component_to_translation, main_box_info):
     ''' Function will return dictionary with 
-       brep_file_name -> {"surfaces": its surface bounding boxes, "full_component": bounding box over all surfaces together}
+       component_id -> {"surfaces": its surface bounding boxes, "full_component": bounding box over all surfaces together}
        Function takes into account the component crossection with the main box and component translations applied in geometry file
     '''
-    brep_to_bnd_box = {}
-    for brep in brep_to_name.keys():
-        bounding_boxes, full_bounding_box = get_surfaces_for_one_component(brep, brep_to_name, brep_to_translation, main_box_info)
-        brep_to_bnd_box[brep] = {}
-        brep_to_bnd_box[brep]["surfaces"] = bounding_boxes
-        brep_to_bnd_box[brep]["full_component"] = full_bounding_box
-    return brep_to_bnd_box
+    component_to_bnd_box = {}
+    for comp_id in component_to_fancy.keys():
+        bounding_boxes, full_bounding_box = get_surfaces_for_one_component(comp_id, component_boxes, brep_to_name, component_to_translation, main_box_info)
+        component_to_bnd_box[comp_id] = {}
+        component_to_bnd_box[comp_id]["surfaces"] = bounding_boxes
+        component_to_bnd_box[comp_id]["full_component"] = full_bounding_box
+    return component_to_bnd_box
     
 
 def download_geo_entities():
@@ -123,28 +135,28 @@ def download_geo_entities():
     return geo_planes, geo_vols
 
 
-def check_bnd_box_equal(lhs, rhs, epsilon=1e-9):
+def check_bnd_box_equal(lhs, rhs, epsilon):
     norm = (np.array(lhs) - np.array(rhs))**2
     return sum(norm)<=epsilon
 
 
-def find_brep_file_for_plane(plane, brep_to_bnd_box):
+def find_component_for_plane(plane, component_to_bnd_box, match_precision):
     '''Looking for plane --> we are not checking here "full_bounding_box" key"
        Not all surfaces are constructed from brep files --> 
        if surface is not found function returns False
     '''
-    for brep in brep_to_bnd_box.keys():
-        for bnd_box in brep_to_bnd_box[brep]["surfaces"]:
-            if check_bnd_box_equal(bnd_box, plane[1], epsilon=1e-9):
-                return brep
-    print("I have not found brep file for plane tag %i" % plane[0])
+    for comp_id in component_to_bnd_box.keys():
+        for bnd_box in component_to_bnd_box[comp_id]["surfaces"]:
+            if check_bnd_box_equal(bnd_box, plane[1], epsilon=match_precision):
+                return comp_id
+    #print("I have not found brep file for plane tag %i" % plane[0])
     return False
 
 
-def get_name_dict(brep_to_name):
+def get_empty_key_dict(given_dict):
     d = {}
-    for k in brep_to_name.keys():
-        d[brep_to_name[k]] = []
+    for k in given_dict.keys():
+        d[k] = []
     return d
 
 
@@ -182,23 +194,21 @@ def read_boxes_in_geometry(geom_file):
     return boxes
 
 
-def get_main_box_info(geom_file, main_box_mark=100):
+def get_main_box_info(main_box_parts, main_box_mark):
     '''
     main_box_mark - Box id of the main box
-    All other boxes in the file will be treated as simple main box corrections
-    and not like geometry components!
+    main_box_parts = {box_id: box coordinates, ....}
     main_box_info = {"main": [x, y, z, dx, dy, dz], "corrections":[[x,y,z,...], ...]}
     '''
-    boxes = read_boxes_in_geometry(geom_file)
+    if not (main_box_mark in main_box_parts.keys()):
+        raise Warning("Currently main box surfaces cannot be chosen to be painted. Or you simply wrote incorrect main box mark")
     main_box_info = {}
     main_box_info["corrections"] = []
-    for id_ in boxes.keys():
+    for id_ in main_box_parts.keys():
         if id_ == main_box_mark:
-            main_box_info["main"] = boxes[id_]
+            main_box_info["main"] = main_box_parts[id_]
         else:
-            main_box_info["corrections"].append(boxes[id_])
-    if len(main_box_info.keys())<2:
-        raise Warning("I did not found main box in geometry file. Chack its ID %i" % main_box_mark)
+            main_box_info["corrections"].append(main_box_parts[id_])
     return main_box_info
     
 
@@ -248,30 +258,70 @@ def read_translations_in_geometry(geom_file):
     f.close()
     return name_to_translations
 
+
 def get_component_translations(name_to_brep, geom_file):
     '''Returns dictionary with information about translations for each brep file
     '''
-    brep_to_translation = {}
+    component_to_translation = {}
     name_to_translations = read_translations_in_geometry(geom_file)
     for n in name_to_translations.keys():
-        brep_file = name_to_brep[n]
-        brep_to_translation[brep_file] = name_to_translations[n]
-    return brep_to_translation
+        if n in name_to_brep:
+            brep_file = name_to_brep[n]
+            component_to_translation[brep_file] = name_to_translations[n]
+        else:   #we are translating box
+            component_to_translation[int(n)] = name_to_translations[n]
+    return component_to_translation
+
+
+def get_component_to_fancy(fancy_to_componnet):
+    component_to_fancy = {}
+    for fancy in fancy_to_componnet.keys():
+        for comp in fancy_to_componnet[fancy]:
+            if comp in component_to_fancy.keys():
+                raise Warning("Component %s belongs to two different fancy names!" % comp)
+            component_to_fancy[comp] = fancy
+    return component_to_fancy
+        
+
+def replace_gmsh_names(brep_to_name, fancy_to_component):
+    for fancy in fancy_to_component.keys():
+        for i in range(len(fancy_to_component[fancy])):
+            if fancy_to_component[fancy][i] in name_to_brep.keys():
+                fancy_to_component[fancy][i] = name_to_brep[fancy_to_component[fancy][i]]
+    return fancy_to_component
+
+
+def split_boxes(boxes_to_params, component_to_fancy):
+    main_box_parts = {}
+    component_boxes = {}
+    for box_id in boxes_to_params.keys():
+        if not (box_id in component_to_fancy.keys()):
+            main_box_parts[box_id] = boxes_to_params[box_id]
+        else:
+            component_boxes[box_id] = boxes_to_params[box_id]
+    return main_box_parts, component_boxes
 
 
 if __name__ == "__main__":
     GEO_FILE = "rme_gmsh.geo"    
-    MAIN_BOX_MARK=100
+    CONFIG_FILE = "config.dat"
     
+    #reading config data
+    with open(CONFIG_FILE, 'r') as json_file:
+        config_data = json.load(json_file)
+       
     #get all brep files
-    brep_to_name = get_brep_file_names(GEO_FILE)
-    name_to_brep = dict([(value, key) for key, value in brep_to_name.items()])
-    #get main box stuff
-    main_box_info = get_main_box_info(GEO_FILE, MAIN_BOX_MARK)
+    brep_to_name, name_to_brep = get_brep_file_names(GEO_FILE)
+    config_data["fancy_names"] = replace_gmsh_names(name_to_brep, config_data["fancy_names"])
+    component_to_fancy = get_component_to_fancy(config_data["fancy_names"])
+    boxes_to_params = read_boxes_in_geometry(GEO_FILE)
+    #get main box stuff - main box is all boxes except those who are added to the fancy_name structure
+    main_box_parts, component_boxes = split_boxes(boxes_to_params, component_to_fancy)
+    main_box_info = get_main_box_info(main_box_parts, config_data["main_box_mark"])
     #get brep file translations
-    brep_to_translation = get_component_translations(name_to_brep, GEO_FILE)
+    component_to_translation = get_component_translations(name_to_brep, GEO_FILE)
     #apply brep file translations and subtract files --> bounding boxes for all surfaces
-    brep_to_bnd_box = get_surfaces_for_breps(brep_to_name, brep_to_translation, main_box_info)
+    component_to_bnd_box = get_surfaces_for_components(component_to_fancy, component_boxes, brep_to_name, component_to_translation, main_box_info)
     #Load gmsh geometry for calculations
     imitate_gmsh_reload(GEO_FILE)
     gmsh.initialize()
@@ -279,15 +329,16 @@ if __name__ == "__main__":
     geo_planes, geo_vols = download_geo_entities()
     gmsh.finalize()
     #paint stuff
-    name_to_planes = get_name_dict(brep_to_name)    #dictionary name --> tag
+    print("Searching for surfaces")
+    fancy_name_to_plane_tag = get_empty_key_dict(config_data["fancy_names"])    #dictionary name --> tag
     for plane in geo_planes:
-        brep_it_belongs = find_brep_file_for_plane(plane, brep_to_bnd_box)
-        if brep_it_belongs:
-            name = brep_to_name[brep_it_belongs]
-            name_to_planes[name].append(plane[0])
+        component_it_belongs = find_component_for_plane(plane, component_to_bnd_box, config_data["match_precision"])
+        if component_it_belongs:
+            name = component_to_fancy[component_it_belongs]
+            fancy_name_to_plane_tag[name].append(plane[0])
     
     #write physical groups to file
-    write_surfaces(name_to_planes, GEO_FILE)
+    write_surfaces(fancy_name_to_plane_tag, GEO_FILE)
 
 
 
