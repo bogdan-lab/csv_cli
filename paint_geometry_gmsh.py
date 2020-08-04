@@ -1,6 +1,6 @@
 import gmsh
 import numpy as np
-import json
+import pylibconfig3
 
 
 def imitate_gmsh_reload(fname):
@@ -302,6 +302,26 @@ def split_boxes(boxes_to_params, component_to_fancy):
     return main_box_parts, component_boxes
 
 
+def load_config_data(config_file):
+    config_data = {}
+    cfg=pylibconfig3.libconfigConfiguration()
+    cfg.read_file(config_file)
+    config_data["main_box_mark"] = cfg["main_box_mark"]
+    config_data["match_precision"] = cfg["match_precision"]
+    config_data["fancy_names"] = {}
+    used_names = set()
+    for i in range(len(cfg["fancy_names"])):
+        name = cfg["fancy_names"][i]["name"]
+        if name in used_names:
+            raise Warning("Fancy name %s is used twice" % name)
+        used_names.add(name)
+        components = []
+        for j in range(len(cfg["fancy_names"][i]["components"])):
+            components.append(cfg["fancy_names"][i]["components"][j])
+        config_data["fancy_names"][name] = components
+    return config_data
+    
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -313,9 +333,7 @@ if __name__ == "__main__":
     CONFIG_FILE = args.config
     
     #reading config data
-    with open(CONFIG_FILE, 'r') as json_file:
-        config_data = json.load(json_file)
-       
+    config_data = load_config_data(CONFIG_FILE)
     #get all brep files
     brep_to_name, name_to_brep = get_brep_file_names(GEO_FILE)
     config_data["fancy_names"] = replace_gmsh_names(name_to_brep, config_data["fancy_names"])
