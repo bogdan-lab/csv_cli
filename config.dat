@@ -1,15 +1,9 @@
 {
-	"main_box_mark" : 100,    	//box id for main box. All boxes that are not passed as components in names will be treated as part of main box
+	"main_box_mark" : 100, 
 	
-	"match_precision" : 1e-9, 	//precision of surface matching during their search
+	"match_precision" : 1e-9,
 	
-	"fancy_names" : { 		// ONLY FOR SURFACES
-		//Physical group name : what does it include. 
-		//the component of the physical group can be passed as brep_file_name, 
-		//name of imported shape which was given in gmsh file or box number
-		//test_group : ["X0", "X1.brep", 500]
-		//main box CANNOT be passed as a component of physical group
-		
+	"fancy_names" : {
 		"X_blades" : ["X0", "X1.brep"],
 		"Unicom" : ["Unicom.brep"],
 		"Y_nozzle" : ["Y-nozzle.brep"],

@@ -303,8 +303,14 @@ def split_boxes(boxes_to_params, component_to_fancy):
 
 
 if __name__ == "__main__":
-    GEO_FILE = "rme_gmsh.geo"    
-    CONFIG_FILE = "config.dat"
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-cfg', '--config', default="config.dat", help="Config file for gmsh painter [def='config.dat']")
+    parser.add_argument('-geo', '--geo_file', default="rme_gmsh.geo", help="Name of the file which contains gmsh script for geometry [def='rme_gmsh.geo']")
+    args=parser.parse_args()
+    
+    GEO_FILE = args.geo_file    
+    CONFIG_FILE = args.config
     
     #reading config data
     with open(CONFIG_FILE, 'r') as json_file:
