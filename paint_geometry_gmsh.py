@@ -40,26 +40,7 @@ def get_other_dimtags(current_comp, component_to_dimtags):
     return dimtags
 
 
-def construct_main_box(main_box_info):
-    '''Function will construct in the current gmsh model main box according to main_box_info
-    '''
-    main_tag = gmsh.model.occ.addBox(main_box_info["main"][0],
-                                     main_box_info["main"][1],
-                                     main_box_info["main"][2],
-                                     main_box_info["main"][3],
-                                     main_box_info["main"][4],
-                                     main_box_info["main"][5], tag=-1)
-    main_box_dimtags = [(3, main_tag)]
-    corrections = []
-    for box in main_box_info["corrections"]:
-        tag = gmsh.model.occ.addBox(box[0], box[1], box[2], box[3], box[4], box[5], tag=-1)
-        corrections.append((3, tag))
-    if len(corrections)>0:
-        main_box_dimtags, UNUSED_map = gmsh.model.occ.cut(main_box_dimtags, corrections, removeObject=True, removeTool=True)
-    return main_box_dimtags
-
-
-def get_surfaces_for_one_component(curr_comp_id, component_boxes, brep_to_name, component_to_translation, main_box_info):
+def get_surfaces_for_one_component(curr_comp_id, component_boxes, brep_to_name, component_to_translation, main_box_coors):
     print("Working on component %s" % curr_comp_id)
     gmsh.initialize()
     gmsh.option.setNumber("Geometry.OCCScaling", 0.1)
@@ -89,7 +70,13 @@ def get_surfaces_for_one_component(curr_comp_id, component_boxes, brep_to_name, 
     cut_dimtags, UNUSED_map = gmsh.model.occ.cut(current_dimtags, other_dimtags, removeObject=True, removeTool=True)
     gmsh.model.occ.synchronize()
     #now intersect the component with main_box -> get surfaces which actually are present in the calculation area
-    main_box_dimtags = construct_main_box(main_box_info)
+    main_box_tag = gmsh.model.occ.addBox(main_box_coors[0],
+                                         main_box_coors[1],
+                                         main_box_coors[2],
+                                         main_box_coors[3],
+                                         main_box_coors[4],
+                                         main_box_coors[5], tag=-1)
+    main_box_dimtags = [(3, main_box_tag)]
     gmsh.model.occ.synchronize()
     intersect_dimtags, UNUSED_map = gmsh.model.occ.intersect(main_box_dimtags, cut_dimtags, tag=-1, removeObject=True, removeTool=True)
     gmsh.model.occ.synchronize()
@@ -105,14 +92,14 @@ def get_surfaces_for_one_component(curr_comp_id, component_boxes, brep_to_name, 
     return bounding_boxes, full_bounding_box
 
 
-def get_surfaces_for_components(component_to_fancy, component_boxes, brep_to_name, component_to_translation, main_box_info):
+def get_surfaces_for_components(component_to_fancy, component_boxes, brep_to_name, component_to_translation, main_box_coors):
     ''' Function will return dictionary with 
        component_id -> {"surfaces": its surface bounding boxes, "full_component": bounding box over all surfaces together}
        Function takes into account the component crossection with the main box and component translations applied in geometry file
     '''
     component_to_bnd_box = {}
     for comp_id in component_to_fancy.keys():
-        bounding_boxes, full_bounding_box = get_surfaces_for_one_component(comp_id, component_boxes, brep_to_name, component_to_translation, main_box_info)
+        bounding_boxes, full_bounding_box = get_surfaces_for_one_component(comp_id, component_boxes, brep_to_name, component_to_translation, main_box_coors)
         component_to_bnd_box[comp_id] = {}
         component_to_bnd_box[comp_id]["surfaces"] = bounding_boxes
         component_to_bnd_box[comp_id]["full_component"] = full_bounding_box
@@ -192,24 +179,6 @@ def read_boxes_in_geometry(geom_file):
             boxes[box_id] = coors
     f.close()
     return boxes
-
-
-def get_main_box_info(main_box_parts, main_box_mark):
-    '''
-    main_box_mark - Box id of the main box
-    main_box_parts = {box_id: box coordinates, ....}
-    main_box_info = {"main": [x, y, z, dx, dy, dz], "corrections":[[x,y,z,...], ...]}
-    '''
-    if not (main_box_mark in main_box_parts.keys()):
-        raise Warning("Currently main box surfaces cannot be chosen to be painted. Or you simply wrote incorrect main box mark")
-    main_box_info = {}
-    main_box_info["corrections"] = []
-    for id_ in main_box_parts.keys():
-        if id_ == main_box_mark:
-            main_box_info["main"] = main_box_parts[id_]
-        else:
-            main_box_info["corrections"].append(main_box_parts[id_])
-    return main_box_info
     
 
 def parse_translation_buffers(translation_lines):
@@ -291,15 +260,17 @@ def replace_gmsh_names(brep_to_name, fancy_to_component):
     return fancy_to_component
 
 
-def split_boxes(boxes_to_params, component_to_fancy):
-    main_box_parts = {}
+def split_boxes(boxes_to_params, main_box_mark):
+    main_box_coors = []
     component_boxes = {}
     for box_id in boxes_to_params.keys():
-        if not (box_id in component_to_fancy.keys()):
-            main_box_parts[box_id] = boxes_to_params[box_id]
+        if box_id == main_box_mark:
+            main_box_coors = boxes_to_params[box_id]
         else:
             component_boxes[box_id] = boxes_to_params[box_id]
-    return main_box_parts, component_boxes
+    if len(main_box_coors)==0:
+        raise Warning("Main box %s was not found!" % main_box_mark)
+    return main_box_coors, component_boxes
 
 
 def load_config_data(config_file):
@@ -325,7 +296,7 @@ def load_config_data(config_file):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-cfg', '--config', default="config.dat", help="Config file for gmsh painter [def='config.dat']")
+    parser.add_argument('-cfg', '--config', default="paint_config.dat", help="Config file for gmsh painter [def='paint_config.dat']")
     parser.add_argument('-geo', '--geo_file', default="rme_gmsh.geo", help="Name of the file which contains gmsh script for geometry [def='rme_gmsh.geo']")
     args=parser.parse_args()
     
@@ -340,12 +311,11 @@ if __name__ == "__main__":
     component_to_fancy = get_component_to_fancy(config_data["fancy_names"])
     boxes_to_params = read_boxes_in_geometry(GEO_FILE)
     #get main box stuff - main box is all boxes except those who are added to the fancy_name structure
-    main_box_parts, component_boxes = split_boxes(boxes_to_params, component_to_fancy)
-    main_box_info = get_main_box_info(main_box_parts, config_data["main_box_mark"])
+    main_box_coors, component_boxes = split_boxes(boxes_to_params, config_data["main_box_mark"])
     #get brep file translations
     component_to_translation = get_component_translations(name_to_brep, GEO_FILE)
     #apply brep file translations and subtract files --> bounding boxes for all surfaces
-    component_to_bnd_box = get_surfaces_for_components(component_to_fancy, component_boxes, brep_to_name, component_to_translation, main_box_info)
+    component_to_bnd_box = get_surfaces_for_components(component_to_fancy, component_boxes, brep_to_name, component_to_translation, main_box_coors)
     #Load gmsh geometry for calculations
     imitate_gmsh_reload(GEO_FILE)
     gmsh.initialize()

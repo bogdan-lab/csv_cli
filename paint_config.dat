@@ -5,10 +5,10 @@ match_precision = 1e-9; 		#Precision of surface comparison in cm**2
 fancy_names = (
 	#{name = PHYSICAL GROUP NAME; components = (LIST OF COMPONENTS OF THE GROUP)}
 	#components can be set as the box id number, brep_file_name or the name of variable into which brep is imported
-	#Main box cannot be a component. All boxes which are not components are treated as parts of the main box!
+	#Main box cannot be a component.
 	#Structure which is generated inside the geo_file using some BooleanOperation cannot be a component
 
 	{name="X_blades"; components=("X0", "X1.brep")}, 
-	{name="test"; components=(500, "Y0.brep")},
+	{name="test"; components=("Y0.brep")},
 	{name="Unicom"; components=("Unicom.brep")}
 )
