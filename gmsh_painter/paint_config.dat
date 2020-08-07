@@ -2,6 +2,10 @@ main_box_mark = 100;			#ID of the main box
 
 match_precision = 1e-9; 		#Precision of surface comparison in cm**2
 
+rest_metal = True;
+
+rest_free_space = True;
+
 fancy_names = {
 	#{name = PHYSICAL GROUP NAME; components = (LIST OF COMPONENTS OF THE GROUP)}
 	#components can be set as the box id number, brep_file_name or the name of variable into which brep is imported

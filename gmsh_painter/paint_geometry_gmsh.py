@@ -147,6 +147,17 @@ def find_component_for_volume(vol, component_to_bnd_box, match_precision):
     return False
 
 
+def get_volume_planes(vol_comp_surfaces, geo_planes, match_precision):
+    this_vol_planes = []
+    for bnd in vol_comp_surfaces:
+        for pl in geo_planes:
+            if check_bnd_box_equal(bnd, pl[1], match_precision):
+                this_vol_planes.append(pl[0])
+    if len(this_vol_planes)!=len(vol_comp_surfaces):
+        print("Some volume surfaces might be marked as metal!")
+    return this_vol_planes
+
+
 def get_empty_key_dict(given_key_list):
     d = {}
     for k in given_key_list:
@@ -345,8 +356,26 @@ def load_config_data(config_file):
     config_data["fancy_names"].update(name_to_components)
     config_data["surface_names"] = read_names(cfg["fancy_names"]["surfaces"])
     config_data["volume_names"] = read_names(cfg["fancy_names"]["volumes"])
+    config_data["rest_metal"] = cfg["rest_metal"]
+    config_data["rest_free_space"] = cfg["rest_free_space"]
     return config_data
-    
+
+
+def get_rest_metal_surfaces(geo_planes, marked_planes, volume_planes):
+    metal_planes = []
+    for pl in geo_planes:
+        if not (pl[0] in marked_planes) and not (pl[0] in volume_planes):
+            metal_planes.append(pl[0])
+    return metal_planes
+
+
+def get_rest_volumes(geo_vols, marked_volumes):
+    free_spaces = []
+    for vol in geo_vols:
+        if not (vol[0] in marked_volumes):
+            free_spaces.append(vol[0])
+    return free_spaces
+
 
 if __name__ == "__main__":
     import argparse
@@ -381,21 +410,37 @@ if __name__ == "__main__":
     gmsh.finalize()
     #paint stuff
     print("Searching for surfaces")
+    marked_planes = []
     fancy_name_to_plane_tag = get_empty_key_dict(config_data["surface_names"])    #dictionary name --> tag
     for plane in geo_planes:
         component_it_belongs = find_component_for_plane(plane, plane_compon_to_bnd_box, config_data["match_precision"])
         if component_it_belongs:
             name = component_to_fancy[component_it_belongs]
             fancy_name_to_plane_tag[name].append(plane[0])
+            if plane[0] in marked_planes:
+                raise Warning("Plane %s occurs in two different physical groups!" % plane[0])
+            marked_planes.append(plane[0])
     
     print("Searching for volumes")
+    marked_volumes = []
+    volume_planes = []
     fancy_name_to_vol_tag = get_empty_key_dict(config_data["volume_names"])
     for vol in geo_vols:
         component_it_belongs = find_component_for_volume(vol, vol_compon_to_bnd_box, config_data["match_precision"])
         if component_it_belongs:
             name = component_to_fancy[component_it_belongs]
             fancy_name_to_vol_tag[name].append(vol[0])
-            
+            if vol[0] in marked_volumes:
+                raise Warning("Volume %s occurs in two different physical groups!" % vol[0])
+            marked_volumes.append(vol[0])
+            this_vol_planes = get_volume_planes(vol_compon_to_bnd_box[component_it_belongs]["surfaces"], geo_planes, config_data["match_precision"])
+            volume_planes.extend(this_vol_planes)
+    
+    if config_data["rest_metal"]:
+        fancy_name_to_plane_tag["metal"] = get_rest_metal_surfaces(geo_planes, marked_planes, volume_planes)
+    if config_data["rest_free_space"]:
+        fancy_name_to_vol_tag["free_space"] = get_rest_volumes(geo_vols, marked_volumes)
+
     #write physical groups to file
     write_surfaces(fancy_name_to_plane_tag, GEO_FILE)
     write_volumes(fancy_name_to_vol_tag, GEO_FILE)
