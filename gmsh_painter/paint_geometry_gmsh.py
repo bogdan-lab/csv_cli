@@ -136,13 +136,20 @@ def find_component_for_plane(plane, component_to_bnd_box, match_precision):
         for bnd_box in component_to_bnd_box[comp_id]["surfaces"]:
             if check_bnd_box_equal(bnd_box, plane[1], epsilon=match_precision):
                 return comp_id
-    #print("I have not found brep file for plane tag %i" % plane[0])
     return False
 
 
-def get_empty_key_dict(given_dict):
+def find_component_for_volume(vol, component_to_bnd_box, match_precision):
+    '''Similar but for volumes'''
+    for comp_id in component_to_bnd_box.keys():
+        if check_bnd_box_equal(component_to_bnd_box[comp_id]["full_component"], vol[1], epsilon=match_precision):
+            return comp_id
+    return False
+
+
+def get_empty_key_dict(given_key_list):
     d = {}
-    for k in given_dict.keys():
+    for k in given_key_list:
         d[k] = []
     return d
 
@@ -159,6 +166,22 @@ def write_surfaces(name_to_planes, geo_file):
             f.write(", %i" % name_to_planes[name][i])
         f.write("};\n")
     f.close()
+    return 0
+
+
+def write_volumes(name_to_volumes, geo_file):
+    f = open(geo_file, "a")
+    f.write("\n\n//Here I add physical volumes\n")
+    for name in name_to_volumes.keys():
+        if len(name_to_volumes[name])==0:
+            print("Object %s has no volumes in current geometry" % name)
+            continue
+        f.write('Physical Volume("%s") = { %i' % (name, name_to_volumes[name][0]))
+        for i in range(1, len(name_to_volumes[name])):
+            f.write(", %i" % name_to_volumes[name][i])
+        f.write("};\n")
+    f.close()
+    return 0
 
 
 def read_boxes_in_geometry(geom_file):
@@ -273,6 +296,39 @@ def split_boxes(boxes_to_params, main_box_mark):
     return main_box_coors, component_boxes
 
 
+def split_components_bnd_box(component_to_bnd_box, component_to_fancy, surface_names, volume_names):
+    plane_compon_to_bnd_box = {}
+    vol_compon_to_bnd_box = {}
+    for comp in component_to_bnd_box.keys():
+        name = component_to_fancy[comp]
+        if name in volume_names:
+            vol_compon_to_bnd_box[comp] = component_to_bnd_box[comp]
+        else:
+            plane_compon_to_bnd_box[comp] = component_to_bnd_box[comp]
+    return plane_compon_to_bnd_box, vol_compon_to_bnd_box
+
+
+def read_names_to_components(name_group, used_names):
+    name_to_components = {}
+    for i in range(len(name_group)):
+        name = name_group[i]["name"]
+        if name in used_names:
+            raise Warning("Fancy name %s is used twice" % name)
+        used_names.add(name)
+        components = []
+        for j in range(len(name_group[i]["components"])):
+            components.append(name_group[i]["components"][j])
+        name_to_components[name] = components
+    return name_to_components, used_names
+
+
+def read_names(name_group):
+    names = []
+    for i in range(len(name_group)):
+        names.append(name_group[i]["name"])
+    return names
+
+
 def load_config_data(config_file):
     config_data = {}
     cfg=pylibconfig3.libconfigConfiguration()
@@ -281,15 +337,14 @@ def load_config_data(config_file):
     config_data["match_precision"] = cfg["match_precision"]
     config_data["fancy_names"] = {}
     used_names = set()
-    for i in range(len(cfg["fancy_names"])):
-        name = cfg["fancy_names"][i]["name"]
-        if name in used_names:
-            raise Warning("Fancy name %s is used twice" % name)
-        used_names.add(name)
-        components = []
-        for j in range(len(cfg["fancy_names"][i]["components"])):
-            components.append(cfg["fancy_names"][i]["components"][j])
-        config_data["fancy_names"][name] = components
+    #add planes
+    name_to_components, used_names = read_names_to_components(cfg["fancy_names"]["surfaces"],used_names)
+    config_data["fancy_names"].update(name_to_components)
+    #add volumes
+    name_to_components, used_names = read_names_to_components(cfg["fancy_names"]["volumes"],used_names)
+    config_data["fancy_names"].update(name_to_components)
+    config_data["surface_names"] = read_names(cfg["fancy_names"]["surfaces"])
+    config_data["volume_names"] = read_names(cfg["fancy_names"]["volumes"])
     return config_data
     
 
@@ -316,6 +371,8 @@ if __name__ == "__main__":
     component_to_translation = get_component_translations(name_to_brep, GEO_FILE)
     #apply brep file translations and subtract files --> bounding boxes for all surfaces
     component_to_bnd_box = get_surfaces_for_components(component_to_fancy, component_boxes, brep_to_name, component_to_translation, main_box_coors)
+    plane_compon_to_bnd_box, vol_compon_to_bnd_box = split_components_bnd_box(component_to_bnd_box, component_to_fancy, 
+                                                                              config_data["surface_names"], config_data["volume_names"])
     #Load gmsh geometry for calculations
     imitate_gmsh_reload(GEO_FILE)
     gmsh.initialize()
@@ -324,16 +381,24 @@ if __name__ == "__main__":
     gmsh.finalize()
     #paint stuff
     print("Searching for surfaces")
-    fancy_name_to_plane_tag = get_empty_key_dict(config_data["fancy_names"])    #dictionary name --> tag
+    fancy_name_to_plane_tag = get_empty_key_dict(config_data["surface_names"])    #dictionary name --> tag
     for plane in geo_planes:
-        component_it_belongs = find_component_for_plane(plane, component_to_bnd_box, config_data["match_precision"])
+        component_it_belongs = find_component_for_plane(plane, plane_compon_to_bnd_box, config_data["match_precision"])
         if component_it_belongs:
             name = component_to_fancy[component_it_belongs]
             fancy_name_to_plane_tag[name].append(plane[0])
     
+    print("Searching for volumes")
+    fancy_name_to_vol_tag = get_empty_key_dict(config_data["volume_names"])
+    for vol in geo_vols:
+        component_it_belongs = find_component_for_volume(vol, vol_compon_to_bnd_box, config_data["match_precision"])
+        if component_it_belongs:
+            name = component_to_fancy[component_it_belongs]
+            fancy_name_to_vol_tag[name].append(vol[0])
+            
     #write physical groups to file
     write_surfaces(fancy_name_to_plane_tag, GEO_FILE)
-
+    write_volumes(fancy_name_to_vol_tag, GEO_FILE)
 
 
 
