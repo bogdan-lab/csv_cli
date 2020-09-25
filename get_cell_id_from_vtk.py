@@ -49,7 +49,7 @@ def check_cell_in_area(c, points, x_bnd, y_bnd, z_bnd):
     return True
 
 def read_bnd(arg):
-    arr = arg.split(";")
+    arr = arg.split(" ")
     arr[0] = float(arr[0])
     arr[1] = float(arr[1])
     return arr
@@ -59,9 +59,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_file', '-i', default='pellicle.vtk', help='input vtk file [def = "pellicle.vtk"]')
     parser.add_argument('--output_file', '-o', default='', help='output file name where cell ids will be saved [def = ""]')
-    parser.add_argument('--x_bnd', '-x', default='-1;1', help='range along x coordinate [def = "-1;1"]')
-    parser.add_argument('--y_bnd', '-y', default='12;12.4', help='range along y coordinate [def = "12;12.4"]')
-    parser.add_argument('--z_bnd', '-z', default='164;165', help='range along z coordinate [def = "164;165"]')
+    parser.add_argument('--x_bnd', '-x', type=str, default='-1 1', help='range along x coordinate [def = "-1 1"]')
+    parser.add_argument('--y_bnd', '-y', type=str, default='12 12.4', help='range along y coordinate [def = "12 12.4"]')
+    parser.add_argument('--z_bnd', '-z', type=str, default='164 165', help='range along z coordinate [def = "164 165"]')
     args = parser.parse_args()
     
     cells, points = read_vtk_struct(args.input_file)
