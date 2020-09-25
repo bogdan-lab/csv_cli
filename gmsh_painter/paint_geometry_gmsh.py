@@ -147,14 +147,14 @@ def find_component_for_volume(vol, component_to_bnd_box, match_precision):
     return False
 
 
-def get_volume_planes(vol_comp_surfaces, geo_planes, match_precision):
+def get_volume_planes(name, vol_comp_surfaces, geo_planes, match_precision):
     this_vol_planes = []
     for bnd in vol_comp_surfaces:
         for pl in geo_planes:
             if check_bnd_box_equal(bnd, pl[1], match_precision):
                 this_vol_planes.append(pl[0])
     if len(this_vol_planes)!=len(vol_comp_surfaces):
-        print("Some volume surfaces might be marked as metal!")
+        print("Not all surfaces of volume \"%s\" was found! If you used 'res_metal_flag' some of them can be marked as metall!" % name)
     return this_vol_planes
 
 
@@ -433,7 +433,7 @@ if __name__ == "__main__":
             if vol[0] in marked_volumes:
                 raise Warning("Volume %s occurs in two different physical groups!" % vol[0])
             marked_volumes.append(vol[0])
-            this_vol_planes = get_volume_planes(vol_compon_to_bnd_box[component_it_belongs]["surfaces"], geo_planes, config_data["match_precision"])
+            this_vol_planes = get_volume_planes(name, vol_compon_to_bnd_box[component_it_belongs]["surfaces"], geo_planes, config_data["match_precision"])
             volume_planes.extend(this_vol_planes)
     
     if config_data["rest_metal"]:
