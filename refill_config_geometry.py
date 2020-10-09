@@ -1,4 +1,4 @@
-
+import re
 
 def parse_mesh_file_line(line):
     line = line.replace('\n', '').replace('"', '')
@@ -32,25 +32,8 @@ def get_file_content(config_file):
     return one_str_content
 
 
-def get_block_begin(content, block_name):
-    starts = []
-    next_start = 0
-    idx=0
-    while idx >=0:
-        idx = content[next_start:].find(block_name)
-        if idx>0:
-            starts.append(idx + next_start)
-            next_start += idx + len(block_name)
-    for i in range(len(starts)):
-        check_1 = content[starts[i]+len(block_name)]==' ' or content[starts[i]+len(block_name)]=='='
-        check_2 = content[starts[i]+len(block_name)]=='\t' or content[starts[i]+len(block_name)]=='\n' 
-        if check_1 or check_2:
-            return starts[i]
-    raise Warning('Could not find block name %s \n' % block_name)
-    
-
-def get_data_block(content, block_name):
-    begin = get_block_begin(content, block_name)
+def get_internal_structure(content):
+    begin = content.index("internal_structure")
     get_inside_structure_block = False
     bracket_count = 0
     end = None
@@ -68,53 +51,37 @@ def get_data_block(content, block_name):
     return (begin, end)
 
 
-def get_cfg_group_names(content):
-    #throw away 'internal_structure={' from the head
-    idx = content.index('{')
-    names = []
-    name_start = True
-    tmp_name = ''
-    for i in range(idx+1,len(content)):
-        if content[i]=='}':
-            name_start = True
-        if name_start and content[i]=='=':
-            tmp_name = tmp_name.replace(' ', '')
-            tmp_name = tmp_name.replace('\n', '')
-            tmp_name = tmp_name.replace('\t', '')
-            tmp_name = tmp_name.replace('}', '')
-            tmp_name = tmp_name.replace(';', '')
-            names.append(tmp_name)
-            tmp_name = ''
-            name_start = False
-        if name_start:
-            tmp_name += content[i]
-    return names
-
-def get_default_block(mesh_name):
-    description = ""
-    description += '\n\tion_induced_emission_model = "default";'
-    description += '\n\ttype = "EMPTY_TYPE";'
-    description += '\n\tmaterial = "EMPTY_MATERIAL";' 
+def get_default_properties(mesh_name):
+    properties = []
+    properties.append('ion_induced_emission_model = "default";')
+    properties.append('type = "EMPTY_TYPE";')
+    properties.append('material = "EMPTY_MATERIAL";') 
     if mesh_name['dimension']==2:
-        description += '\n\tpotential = (EMPTY_POTENTIAL ,"V");'
+        properties.append('potential = (EMPTY_POTENTIAL ,"V");')
     if mesh_name['dimension']==3:    
-        description += '\n\tepsilon=EMPTY_EPSILON;'
-    default_block = "\n%s = {%s\n};\n\n" % (mesh_name['name'], description)
-    return default_block
+        properties.append('epsilon=EMPTY_EPSILON;')
+    return properties
 
 
 def replace_internal_structure(content, phys_names):
-    int_struct = get_data_block(content, "internal_structure")
-    cfg_names = get_cfg_group_names(content[int_struct[0]:int_struct[1]])
-    structure = ""
+    int_struct_range = get_internal_structure(content)
+    internal_structure = content[int_struct_range[0]:int_struct_range[1]]
+    structure = {}
     for mesh_name in phys_names:
-        if mesh_name['name'] in cfg_names:
-            idx = get_data_block(content, mesh_name['name'])
-            structure += content[idx[0]:idx[1]] + ';\n\n'
+        block_match = get_config_block(internal_structure, mesh_name['name'])
+        if block_match!=None:
+            structure[mesh_name['name']] = get_block_porperties(internal_structure[block_match.start():block_match.end()])
         else:
-            structure += get_default_block(mesh_name)
-    new_internal_structure = 'internal_structure = {\n%s\n}' % structure
-    new_content = content[:int_struct[0]] + new_internal_structure + content[int_struct[1]:]
+            structure[mesh_name['name']] = get_default_properties(mesh_name)
+    new_internal_structure = 'internal_structure = {\n\n'
+    for k in structure.keys():
+        tmp = "%s = {\n" % k
+        for el in structure[k]:
+            tmp += "\t%s\n" %el
+        tmp += "};\n\n"
+        new_internal_structure += tmp  
+    new_internal_structure += "}"   #; here taken from old content
+    new_content = content[:int_struct_range[0]] + new_internal_structure + content[int_struct_range[1]:]
     return new_content
 
 
@@ -126,10 +93,22 @@ def replace_mesh_file(content, mesh_file):
     return content[:start] + new_mesh_string + content[end:]
 
 
+def get_config_block(content, block_name):
+    block_pattern = r"\s*%s\s*=\s*{(.*\n?)*?\s*};?" % block_name
+    block_match = re.search(block_pattern, content)
+    return block_match
+
+def get_block_porperties(content):
+    begin = content.find('{')
+    end = content.find('}')
+    property_pattern = "\w+\s*=\s*[\"(]?.*[\")]?;?"
+    properties = re.findall(property_pattern, content[begin:end])
+    return properties
+                                   
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--mesh_file", action='store', type=str, default='mesh.msh', help="mesh file name [def = 'mesh.msh'")
+    parser.add_argument("-m", "--mesh_file", action='store', type=str, default='test_mesh_file', help="mesh file name [def = 'mesh.msh'")
     parser.add_argument("-c", "--config_file", action='store', type=str, default='config.dat', help="config which will be changed [def = 'config.dat']")
     args = parser.parse_args()
     
