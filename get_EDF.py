@@ -112,7 +112,7 @@ if __name__ == "__main__":
     parser.add_argument('-dz' ,'--dz'     ,action='store'     , default='164.0;165.6', help='z interval [def = "164.0;165.6"]')
     parser.add_argument('-t' ,'--tag'     ,action='store'     , default=''           , help='tag for output file name [def = ""]')
     parser.add_argument('-b' ,'--bins'    ,action='store'     , default=50           , help='number of bins [def = 50]')
-    parser.add_argument('-d' ,'--dir'     ,action='store'     , default="EDF"        , help='number of bins [def = "EDF"]')
+    parser.add_argument('-d' ,'--dir'     ,action='store'     , default="EDF"        , help='directory where result files will be saved [def = "EDF"]')
     parser.add_argument('files', nargs='+')
     args = parser.parse_args()
     
@@ -122,11 +122,11 @@ if __name__ == "__main__":
         pass
     
     pt_list = args.species.split(';')
-    dx, dy, dz = convert_coor_ranges(args.dx, args.dy, args.dz)
-    bins = int(args.bins)
-    
+    bins = int(args.bins)    
     tag = args.tag
+
     if args.filter:
+        dx, dy, dz = convert_coor_ranges(args.dx, args.dy, args.dz)
         tag+="x_%s_y_%s_z_%s" % (args.dx, args.dy, args.dz)
     summarized = []
     for filename in args.files:

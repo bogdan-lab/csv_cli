@@ -70,10 +70,18 @@ def convert_coor_ranges(dx, dy, dz):
         dz[i] = float(dz[i])
     return (dx, dy, dz)
 
+
+def merge_lists(data):
+    arr = []
+    for k in data.keys():
+        arr.extend(data[k])
+    return np.array(arr)
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-s'  ,'--species'     ,action='store', default='H+ H2+ H3+', help='list of particles I am interested in [def = "H+ H2+ H3+"]')
+    parser.add_argument('-SP', '--separate', action='store_true', default=False, help="True/False - to save different particles in different files [def = False]")
     parser.add_argument('-F', '--filter'  , action='store_true', default=False, help='True/False Turn on filter by coordinates [def = False]')
     parser.add_argument('-dx' ,'--dx'     ,action='store', default='-7.0 7.0', help='x interval [def = "-7.0 7.0"]')
     parser.add_argument('-dy' ,'--dy'     ,action='store', default='7.5 9.7', help='y interval [def = "7.5 9.7"]')
@@ -85,16 +93,21 @@ if __name__ == "__main__":
     
     
     pt_list = args.species.split(' ')
-    dx, dy, dz = convert_coor_ranges(args.dx, args.dy, args.dz)
+    if args.filter:
+        dx, dy, dz = convert_coor_ranges(args.dx, args.dy, args.dz)
     path = args.path.split('/')
     
     for filename in args.files:
         print("PROCESSING FILE\t%s" % filename)
-        data = []
+        data = {}
         for ptype in pt_list:
             tmp = collect_particles(filename, ptype, path)
             if args.filter:
                 tmp = filter_particles(tmp, dx, dy, dz)
-            data.extend(tmp)
-        np.savetxt(args.out_file + '.txt', data, delimiter='\t', fmt="%.6e", header='x, cm\ty, cm\tz, cm\tVx, cm/s\tVy, cm/s\tVz, cm/s\tw\ttime, s')
-    
+            data[ptype] = tmp
+        if args.separate:
+            for k in data.keys():
+                np.savetxt('%s_%s.txt' % (k, args.out_file), data[k], delimiter='\t', fmt="%.6e", header='x, cm\ty, cm\tz, cm\tVx, cm/s\tVy, cm/s\tVz, cm/s\tw\ttime, s')
+        else:
+            res = merge_lists(data)
+            np.savetxt('%s.txt' % (args.out_file), res, delimiter='\t', fmt="%.6e", header='x, cm\ty, cm\tz, cm\tVx, cm/s\tVy, cm/s\tVz, cm/s\tw\ttime, s')
