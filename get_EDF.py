@@ -52,9 +52,9 @@ def mk_array_from_hist(hist, bins):
 
 
 def convert_coor_ranges(dx, dy, dz):
-    dx = dx.split(';')
-    dy = dy.split(';')
-    dz = dz.split(';')
+    dx = dx.split(' ')
+    dy = dy.split(' ')
+    dz = dz.split(' ')
     for i in range(2):
         dx[i] = float(dx[i])
         dy[i] = float(dy[i])
@@ -104,12 +104,12 @@ def save_edf(energy_weight, bin_num, ptype, time, tag, folder):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s'  ,'--species',action='store'     , default='H+;H2+;H3+' , help='list of particles I am interested in [def = "H+;H2+;H3+"]')
+    parser.add_argument('-s'  ,'--species',action='store'     , default='H+ H2+ H3+' , help='list of particles I am interested in [def = "H+ H2+ H3+"]')
     parser.add_argument('-F' ,'--filter'  ,action='store_true', default=False        , help='True/False filter particle according to position or not [def = False]')
     parser.add_argument('-S' ,'--sum'     ,action='store_true', default=False        , help='True/False save summarized EDF for all particles in list [def = False]')
-    parser.add_argument('-dx' ,'--dx'     ,action='store'     , default='-7.0;7.0'   , help='x interval [def = "-7.0;7.0"]')
-    parser.add_argument('-dy' ,'--dy'     ,action='store'     , default='8;9.5'      , help='y interval [def = "8;9.5"]')
-    parser.add_argument('-dz' ,'--dz'     ,action='store'     , default='164.0;165.6', help='z interval [def = "164.0;165.6"]')
+    parser.add_argument('-dx' ,'--dx'     ,action='store'     , default='-7.0 7.0'   , help='x interval [def = "-7.0 7.0"]')
+    parser.add_argument('-dy' ,'--dy'     ,action='store'     , default='8 9.5'      , help='y interval [def = "8 9.5"]')
+    parser.add_argument('-dz' ,'--dz'     ,action='store'     , default='164.0 165.6', help='z interval [def = "164.0 165.6"]')
     parser.add_argument('-t' ,'--tag'     ,action='store'     , default=''           , help='tag for output file name [def = ""]')
     parser.add_argument('-b' ,'--bins'    ,action='store'     , default=50           , help='number of bins [def = 50]')
     parser.add_argument('-d' ,'--dir'     ,action='store'     , default="EDF"        , help='directory where result files will be saved [def = "EDF"]')
@@ -121,13 +121,14 @@ if __name__ == "__main__":
     except:
         pass
     
-    pt_list = args.species.split(';')
+    pt_list = args.species.split(' ')
     bins = int(args.bins)    
     tag = args.tag
 
     if args.filter:
         dx, dy, dz = convert_coor_ranges(args.dx, args.dy, args.dz)
         tag+="x_%s_y_%s_z_%s" % (args.dx, args.dy, args.dz)
+	tag = tag.replace(' ', '_')
     summarized = []
     for filename in args.files:
         print("PROCESSING FILE\t%s" % filename)
