@@ -18,6 +18,7 @@ if __name__=="__main__":
     
     plt.figure()
     plt.grid()
+    plt.title("Used cols xcol=%i ycol=%i" % (cols[0], cols[1]))
     for file in args.files:
         data = np.loadtxt(file, delimiter=args.delimiter, usecols=cols)
         plt.plot(data[:,0], data[:,1], label=file)

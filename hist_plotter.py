@@ -30,9 +30,10 @@ if __name__=="__main__":
     parser.add_argument('-r', '--range', type=str, default='', help="Range forp plotting histogram SPACE SEPARATED [def = '']")
     parser.add_argument('-ll', '--legend_loc', type=int, default=0, help="legend location id [def = 0]")
     parser.add_argument('-ot', '--out_tag', type=str, default='', help="out file tag for the txt file name [def='']")
-    parser.add_argument('-S', '--save_hist', action='store_false', default=True, help='True/False for saving histogram as a data [def=True]')
+    parser.add_argument('-S', '--save_hist', action='store_true', default=False, help='True/False for saving histogram as a data [def=False]')
     parser.add_argument('-C', '--accumulate', action='store_true', default=False, help='True/False for data accumulation [def=False]')
-    parser.add_argument('-N', '--normalize', action='store_false', default=True, help='True/False histogram normalization [def=True]')
+    parser.add_argument('-N', '--normalize', action='store_true', default=False, help='True/False histogram normalization [def=False]')
+    parser.add_argument('-sF', '--show_fig', action='store_true', default=False, help='True/False show and figure [def=False]')
     args = parser.parse_args()
     
     hist_range = None
@@ -43,6 +44,7 @@ if __name__=="__main__":
     
     plt.figure()
     plt.grid()
+    plt.title("Vcol=%i ; Wcol=%i" % (args.val_col, args.weight_col))
     for file in args.files:
         data = np.loadtxt(file, delimiter=args.delimiter)
         weights = get_weights(args.weight_col, data)
@@ -61,6 +63,8 @@ if __name__=="__main__":
             header += "None"
         else:
             header += "%i" % args.weight_col
-        np.savetxt('HIST_%s_%s.txt' % (args.out_tag, file), hist, fmt='%.6e', delimiter='\t', header=header)
+        if args.save_hist:
+            np.savetxt('HIST_%s_%s.txt' % (args.out_tag, file), hist, fmt='%.6e', delimiter='\t', header=header)
     plt.legend(loc=args.legend_loc)
-    plt.show()
+    if(args.show_fig):
+        plt.show()
