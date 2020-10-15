@@ -19,6 +19,24 @@ def convert_hist_to_points(bins_edges,hist):
         X[2 * i + 1] = bins_edges[i + 1]
     return np.column_stack((X, Y))
 
+def get_header(file, args):
+    header = "Hist was obtained from\nFILE: %s\n" % file
+    f = open(file, 'r')
+    fst_line = f.readline()
+    f.close()
+    fst_line.replace('#', '').replace('\n', '')
+    fst_line = fst_line.split(args.delimiter)
+    val = fst_line[args.val_col]
+    weight = "NO weight was used\n"
+    if args.weight_col>0:
+        weight ="Used weight from \"%s\"\n" % fst_line[args.weight_col]
+    header+= weight
+    y_axis = "Count"
+    if args.normalize:
+        y_axis = "Probability density"
+    header += "%s%s%s" % (val, args.delimiter, y_axis)
+    return header
+
 if __name__=="__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -58,11 +76,7 @@ if __name__=="__main__":
                                              lw = 1.5,
                                              label = file[:-4])
         hist = convert_hist_to_points(res_bins, res_arr)
-        header = "Hist was obtained from\nFILE: %s\nVALUE_COL_IDX = %i\nWEIGHT_COL_IDX = " % (file, args.val_col)
-        if args.weight_col<0:
-            header += "None"
-        else:
-            header += "%i" % args.weight_col
+        header = get_header(file, args)
         if args.save_hist:
             np.savetxt('HIST_%s_%s.txt' % (args.out_tag, file), hist, fmt='%.6e', delimiter='\t', header=header)
     plt.legend(loc=args.legend_loc)
