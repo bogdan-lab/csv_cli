@@ -128,7 +128,7 @@ if __name__ == "__main__":
     if args.filter:
         dx, dy, dz = convert_coor_ranges(args.dx, args.dy, args.dz)
         tag+="x_%s_y_%s_z_%s" % (args.dx, args.dy, args.dz)
-	tag = tag.replace(' ', '_')
+    tag = tag.replace(' ', '_')
     summarized = []
     for filename in args.files:
         print("PROCESSING FILE\t%s" % filename)
