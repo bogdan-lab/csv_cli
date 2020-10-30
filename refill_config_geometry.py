@@ -83,7 +83,7 @@ def get_config_block(content, block_name):
 def get_block_porperties(content):
     begin = content.find('{')
     end = content.find('}')
-    property_pattern = "\w+\s*=\s*[\"(]?.*[\")]?;?"
+    property_pattern = "\w+\s*=\s*[^\;]+;"
     properties = re.findall(property_pattern, content[begin:end])
     return properties
                                    
