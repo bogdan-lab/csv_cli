@@ -20,28 +20,15 @@ def collect_particles(filename, ptype):
     FILE.close()
     return data
 
-
-def check_val_in_range(val, rng):
-    return (val>rng[0] and val<rng[1])
-
-
-def check_particle(pt, bnd_x, bnd_y, bnd_z):
-    if not check_val_in_range(pt[0], bnd_x):
-        return False
-    if not check_val_in_range(pt[1], bnd_y):
-        return False
-    if not check_val_in_range(pt[2], bnd_z):
-        return False
-    return True
-
+def get_range_filter(column, rng):
+    return (column>rng[0])*(column<rng[1])
 
 def filter_particles(data, bnd_x, bnd_y, bnd_z):
-    arr = []
-    for i in range(len(data)):
-        if check_particle(data[i], bnd_x, bnd_y, bnd_z):
-            arr.append(data[i])
-    return np.array(arr)
-
+    x_filter = get_range_filter(data[:,0], bnd_x)
+    y_filter = get_range_filter(data[:,1], bnd_y)
+    z_filter = get_range_filter(data[:,2], bnd_z)
+    arr = data[x_filter*y_filter*z_filter]
+    return arr
 
 def mk_array_from_hist(hist, bins):
     arr = [[bins[0], hist[0]]]
