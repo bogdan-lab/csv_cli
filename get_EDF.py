@@ -7,6 +7,10 @@ def collect_particles(filename, ptype):
     data = []
     FILE = h5py.File(filename, 'r')
     pt_data = FILE["particles"]
+    keys = pt_data.keys()
+    if ptype not in keys:
+        print("Particles %s was not found" % ptype)
+        return np.array([])
     x = pt_data[ptype]['x'][:]
     y = pt_data[ptype]['y'][:]
     z = pt_data[ptype]['z'][:]
@@ -23,6 +27,8 @@ def get_range_filter(column, rng):
     return (column>rng[0])*(column<rng[1])
 
 def filter_particles(data, bnd_x, bnd_y, bnd_z):
+    if len(data)==0:
+        return data
     x_filter = get_range_filter(data[:,0], bnd_x)
     y_filter = get_range_filter(data[:,1], bnd_y)
     z_filter = get_range_filter(data[:,2], bnd_z)
@@ -66,6 +72,8 @@ def convert_hist_to_points(bins_edges,hist):
 
 
 def calc_edf(data, bin_num, ptype, time, tag, folder):
+    if(len(data)==0):
+        return np.array([])
     mass = {"e":9.1e-28, "H+":1.67e-24, "H2+":2*1.67e-24, "H3+":3*1.67e-24}
     energy = 0.5*mass[ptype]*(data[:,3]**2 + data[:,4]**2 + data[:,5]**2)*6.242e11    #in eV
     energy_weight = np.column_stack((energy, data[:,-1]))
@@ -123,6 +131,8 @@ if __name__ == "__main__":
         time = get_time(filename)
         for ptype in pt_list:
             data = collect_particles(filename, ptype)
+            if(len(data)==0):
+                continue
             if args.filter:
                 data = filter_particles(data, dx, dy, dz)
             tmp = calc_edf(data, bins, ptype, time, tag, args.dir)
