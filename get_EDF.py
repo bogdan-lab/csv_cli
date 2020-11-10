@@ -117,8 +117,8 @@ if __name__ == "__main__":
         dx, dy, dz = convert_coor_ranges(args.dx, args.dy, args.dz)
         tag+="x_%s_y_%s_z_%s" % (args.dx, args.dy, args.dz)
     tag = tag.replace(' ', '_')
-    summarized = []
     for filename in args.files:
+        summarized = []
         print("PROCESSING FILE\t%s" % filename)
         time = get_time(filename)
         for ptype in pt_list:
