@@ -14,7 +14,11 @@ def get_particle_data(file, path):
 def collect_particles(filename, ptype, path):
     data = []
     FILE = h5py.File(filename, 'r')
-    pt_data = get_particle_data(FILE, path) 
+    pt_data = get_particle_data(FILE, path)
+    keys = pt_data.keys()
+    if ptype not in keys:
+        print("Particles %s was not found" % ptype)
+        return np.array([])
     x = pt_data[ptype]['x'][:]
     y = pt_data[ptype]['y'][:]
     z = pt_data[ptype]['z'][:]
@@ -32,6 +36,8 @@ def get_range_filter(column, rng):
     return (column>rng[0])*(column<rng[1])
 
 def filter_particles(data, bnd_x, bnd_y, bnd_z, bnd_t):
+    if len(data)==0:
+        return data
     x_filter = get_range_filter(data[:,0], bnd_x)
     y_filter = get_range_filter(data[:,1], bnd_y)
     z_filter = get_range_filter(data[:,2], bnd_z)
