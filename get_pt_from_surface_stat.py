@@ -23,31 +23,21 @@ def collect_particles(filename, ptype, path):
     Vz = pt_data[ptype]['Vz'][:]
     w = pt_data[ptype]['w'][:]
     t = pt_data[ptype]['t'][:]
-    data = np.column_stack((x, y, z, Vx, Vy, Vz, w))
+    data = np.column_stack((x, y, z, Vx, Vy, Vz, w, t))
     FILE.close()
     return data
 
 
-def check_val_in_range(val, rng):
-    return (val>rng[0] and val<rng[1])
+def get_range_filter(column, rng):
+    return (column>rng[0])*(column<rng[1])
 
-
-def check_particle(pt, bnd_x, bnd_y, bnd_z):
-    if not check_val_in_range(pt[0], bnd_x):
-        return False
-    if not check_val_in_range(pt[1], bnd_y):
-        return False
-    if not check_val_in_range(pt[2], bnd_z):
-        return False
-    return True
-
-
-def filter_particles(data, bnd_x, bnd_y, bnd_z):
-    arr = []
-    for i in range(len(data)):
-        if check_particle(data[i], bnd_x, bnd_y, bnd_z):
-            arr.append(data[i])
-    return np.array(arr)
+def filter_particles(data, bnd_x, bnd_y, bnd_z, bnd_t):
+    x_filter = get_range_filter(data[:,0], bnd_x)
+    y_filter = get_range_filter(data[:,1], bnd_y)
+    z_filter = get_range_filter(data[:,2], bnd_z)
+    t_filter = get_range_filter(data[:,7], bnd_t)
+    arr = data[x_filter*y_filter*z_filter*t_filter]
+    return arr
 
 
 def mk_array_from_hist(hist, bins):
@@ -58,17 +48,11 @@ def mk_array_from_hist(hist, bins):
     arr.append([bins[-1], hist[-1]])
     return np.array(arr)
 
-
-def convert_coor_ranges(dx, dy, dz):
+def convert_range(dx):
     dx = dx.split(' ')
-    dy = dy.split(' ')
-    dz = dz.split(' ')
-    for i in range(2):
-        dx[i] = float(dx[i])
-        dy[i] = float(dy[i])
-        dz[i] = float(dz[i])
-    return (dx, dy, dz)
-
+    dx[0] = float(dx[0])
+    dx[1] = float(dx[1])
+    return dx
 
 def merge_lists(data):
     arr = []
@@ -85,6 +69,7 @@ if __name__ == "__main__":
     parser.add_argument('-dx' ,'--dx'     ,action='store', default='-7.0 7.0', help='x interval [def = "-7.0 7.0"]')
     parser.add_argument('-dy' ,'--dy'     ,action='store', default='7.5 9.7', help='y interval [def = "7.5 9.7"]')
     parser.add_argument('-dz' ,'--dz'     ,action='store', default='164.0 165.6', help='z interval [def = "164.0 165.6"]')
+    parser.add_argument('-dt' ,'--dt'     ,action='store', default='0 20e-6', help='time interval [def = "0 20e-6"]')
     parser.add_argument('-p'  ,'--path'   , action='store', default='particles', help="path to particle dataset in h5 [default = 'particles']") 
     parser.add_argument('-o' ,'--out_file'     ,action='store',default='collected_pt', help='name for output file name [def = collected_pt]')
     parser.add_argument('files', nargs='+')
@@ -93,7 +78,10 @@ if __name__ == "__main__":
     
     pt_list = args.species.split(' ')
     if args.filter:
-        dx, dy, dz = convert_coor_ranges(args.dx, args.dy, args.dz)
+        dx = convert_range(args.dx)
+        dy = convert_range(args.dy)
+        dz = convert_range(args.dz)
+        dt = convert_range(args.dt)
     path = args.path.split('/')
     
     for filename in args.files:
@@ -102,7 +90,7 @@ if __name__ == "__main__":
         for ptype in pt_list:
             tmp = collect_particles(filename, ptype, path)
             if args.filter:
-                tmp = filter_particles(tmp, dx, dy, dz)
+                tmp = filter_particles(tmp, dx, dy, dz, dt)
             data[ptype] = tmp
         if args.separate:
             for k in data.keys():
