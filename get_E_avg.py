@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 def collect_particles(filename, ptype):
     FILE = h5py.File(filename, 'r')
     pt_data = FILE["particles"]
+    keys = pt_data.keys()
+    if ptype not in keys:
+        print("Particles %s was not found" % ptype)
+        return np.array([])
     x = pt_data[ptype]['x'][:]
     y = pt_data[ptype]['y'][:]
     z = pt_data[ptype]['z'][:]
