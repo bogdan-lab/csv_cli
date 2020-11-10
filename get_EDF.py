@@ -14,8 +14,7 @@ def collect_particles(filename, ptype):
     Vy = pt_data[ptype]['Vy'][:]
     Vz = pt_data[ptype]['Vz'][:]
     w = pt_data[ptype]['w'][:]
-    for i in range(len(z)):
-        data.append([x[i], y[i], z[i], Vx[i], Vy[i], Vz[i], w[i]])
+    data = np.column_stack((x, y, z, Vx, Vy, Vz, w))
     FILE.close()
     return np.array(data)
 
