@@ -24,6 +24,8 @@ def get_range_filter(column, rng):
     return (column>rng[0])*(column<rng[1])
 
 def filter_particles(data, bnd_x, bnd_y, bnd_z):
+    if len(data)==0:
+        return data
     x_filter = get_range_filter(data[:,0], bnd_x)
     y_filter = get_range_filter(data[:,1], bnd_y)
     z_filter = get_range_filter(data[:,2], bnd_z)

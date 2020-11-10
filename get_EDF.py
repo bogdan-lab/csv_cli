@@ -89,7 +89,7 @@ def save_edf(energy_weight, bin_num, ptype, time, tag, folder):
     plt.title("%s; %i ns" % (ptype, time))
     arr, bins, empty = plt.hist(energy_weight[:,0], bins=bin_num, density=True, weights=energy_weight[:,1], histtype="step", lw=1.5)
     plt.yscale("log")
-    name = folder + "/EDF_%s_%ins_%s" % (ptype, time, tag)
+    name = folder + "/EDF_%s_%ins_%s" % (ptype.replace(" ", "_"), time, tag)
     plt.savefig(name + ".png", dpi=300)
     plt.close()
     result = convert_hist_to_points(bins, arr)
