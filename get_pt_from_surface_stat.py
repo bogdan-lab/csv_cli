@@ -66,6 +66,13 @@ def merge_lists(data):
         arr.extend(data[k])
     return np.array(arr)
 
+def add_energy_column(data, ptype):
+    if len(data)==0:
+        return data
+    mass = {"e":9.1e-28, "H+":1.67e-24, "H2+":2*1.67e-24, "H3+":3*1.67e-24}
+    energy = 0.5*mass[ptype]*(data[:,3]**2 + data[:,4]**2 + data[:,5]**2)*6.242e11    #in eV
+    return np.column_stack((data, energy))
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -77,7 +84,7 @@ if __name__ == "__main__":
     parser.add_argument('-dz' ,'--dz'     ,action='store', default='164.0 165.6', help='z interval [def = "164.0 165.6"]')
     parser.add_argument('-dt' ,'--dt'     ,action='store', default='0 20e-6', help='time interval [def = "0 20e-6"]')
     parser.add_argument('-p'  ,'--path'   , action='store', default='particles', help="path to particle dataset in h5 [default = 'particles']") 
-    parser.add_argument('-o' ,'--out_file'     ,action='store',default='collected_pt', help='name for output file name [def = collected_pt]')
+    parser.add_argument('-o' ,'--out_file'     ,action='store',default='collected_pt', help='name for output file name MARK SURFACE HERE! [def = collected_pt]')
     parser.add_argument('files', nargs='+')
     args = parser.parse_args()
     
@@ -95,12 +102,13 @@ if __name__ == "__main__":
         data = {}
         for ptype in pt_list:
             tmp = collect_particles(filename, ptype, path)
+            tmp = add_energy_column(tmp, ptype)
             if args.filter:
                 tmp = filter_particles(tmp, dx, dy, dz, dt)
             data[ptype] = tmp
         if args.separate:
             for k in data.keys():
-                np.savetxt('%s_%s.txt' % (k, args.out_file), data[k], delimiter='\t', fmt="%.6e", header='x, cm\ty, cm\tz, cm\tVx, cm/s\tVy, cm/s\tVz, cm/s\tw\ttime, s')
+                np.savetxt('%s_%s.txt' % (k, args.out_file), data[k], delimiter='\t', fmt="%.6e", header='x, cm\ty, cm\tz, cm\tVx, cm/s\tVy, cm/s\tVz, cm/s\tw\ttime, s\tenergy, eV')
         else:
             res = merge_lists(data)
-            np.savetxt('%s.txt' % (args.out_file), res, delimiter='\t', fmt="%.6e", header='x, cm\ty, cm\tz, cm\tVx, cm/s\tVy, cm/s\tVz, cm/s\tw\ttime, s')
+            np.savetxt('%s.txt' % (args.out_file), res, delimiter='\t', fmt="%.6e", header='x, cm\ty, cm\tz, cm\tVx, cm/s\tVy, cm/s\tVz, cm/s\tw\ttime, s\tenergy, eV')
