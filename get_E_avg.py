@@ -53,7 +53,10 @@ def convert_coor_ranges(dx, dy, dz):
 
 
 def get_time(filename):
-    return int(filename[10:-3])/10    #in ns
+    FILE = h5py.File(filename, 'r')
+    time = FILE.attrs['time']*1e9
+    FILE.close()
+    return time    #in ns
 
 
 def convert_hist_to_points(bins_edges,hist):
