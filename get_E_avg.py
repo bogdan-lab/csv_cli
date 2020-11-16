@@ -117,9 +117,11 @@ if __name__ == "__main__":
         for i in range(len(E_avg[pt_list[0]])):
             time = E_avg[pt_list[0]][i][0]
             tmp = 0
+            count = 0
             for k in E_avg.keys():
                 tmp+=E_avg[k][i][1]
-            summarized.append([time, tmp/len(E_avg.keys())])
+                count += 1 if E_avg[k][i][1]>0 else 0
+            summarized.append([time, tmp/count])
         summarized = np.array(summarized)
         np.savetxt("E_avg_SUMMARIZED_" + tag + ".txt", summarized, delimiter='\t', fmt="%.6e", header="time, ns\tEnergy, eV")
     
