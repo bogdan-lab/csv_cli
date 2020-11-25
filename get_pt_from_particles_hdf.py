@@ -3,9 +3,10 @@ import h5py
 
 
 def collect_particles(filename, ptype):
-    data = []
     FILE = h5py.File(filename, 'r')
     pt_data = FILE['particles']
+    if not(ptype in pt_data.keys()):
+        return np.array([])
     x = pt_data[ptype]['x'][:]
     y = pt_data[ptype]['y'][:]
     z = pt_data[ptype]['z'][:]
@@ -78,7 +79,7 @@ if __name__ == "__main__":
         data = {}
         for ptype in pt_list:
             tmp = collect_particles(filename, ptype)
-            if args.filter:
+            if args.filter and len(tmp)>0:
                 tmp = filter_particles(tmp, dx, dy, dz)
             data[ptype] = tmp
         if args.separate:
