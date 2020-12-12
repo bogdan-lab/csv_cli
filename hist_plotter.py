@@ -76,7 +76,10 @@ if __name__=="__main__":
                                              lw = 1.5,
                                              label = file[:-4])
         hist = convert_hist_to_points(res_bins, res_arr)
-        header = get_header(file, args)
+        try:
+            header = get_header(file, args)
+        except:
+            header = ""
         if args.save_hist:
             np.savetxt('HIST_%s_%s.txt' % (args.out_tag, file), hist, fmt='%.6e', delimiter='\t', header=header)
     plt.legend(loc=args.legend_loc)
