@@ -100,7 +100,7 @@ if __name__ == "__main__":
     dim_tag = get_phys_group_dim_tag(args.group_name)
     entity_data = download_elements(dim_tag)
     print("Finished with entity data")
-    area = calculate_area(entity_data)
+    area = calculate_area(entity_data, x_bnd, y_bnd, z_bnd)
     gmsh.finalize()
     
     print("Area = %.6e cm^2" % area)    
