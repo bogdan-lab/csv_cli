@@ -75,8 +75,8 @@ def get_boundary(arg_bnd):
     if arg_bnd==None:
         return None
     bnd = np.zeros(2)
-    tmp_0 = float(arg_bnd[0])
-    tmp_1 = float(arg_bnd[1])
+    tmp_0 = float(arg_bnd.split(" ")[0])
+    tmp_1 = float(arg_bnd.split(" ")[1])
     bnd[0] = min(tmp_0, tmp_1)
     bnd[1] = max(tmp_0, tmp_1)
     return bnd
