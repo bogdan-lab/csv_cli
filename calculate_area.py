@@ -36,7 +36,7 @@ def download_elements(phg_dim_tag):
 
 
 def check_val_in_boundary(val, bnd):
-    if bnd==None:
+    if np.any(bnd==None):
         return True
     return val>=bnd[0] and val<=bnd[1]
     
