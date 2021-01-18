@@ -56,6 +56,13 @@ def merge_lists(data):
         arr.extend(data[k])
     return np.array(arr)
 
+def add_energy_column(data, ptype):
+    if len(data)==0:
+        return data
+    mass = {"e":9.1e-28, "H+":1.67e-24, "H2+":2*1.67e-24, "H3+":3*1.67e-24}
+    energy = 0.5*mass[ptype]*(data[:,3]**2 + data[:,4]**2 + data[:,5]**2)*6.242e11    #in eV
+    return np.column_stack((data, energy))
+
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -79,6 +86,7 @@ if __name__ == "__main__":
         data = {}
         for ptype in pt_list:
             tmp = collect_particles(filename, ptype)
+            tmp = add_energy_column(tmp, ptype)
             if args.filter and len(tmp)>0:
                 tmp = filter_particles(tmp, dx, dy, dz)
             data[ptype] = tmp
