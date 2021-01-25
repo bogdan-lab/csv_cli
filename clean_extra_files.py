@@ -13,29 +13,22 @@ def get_save_interval(t):
     return dt[n]
 
 
-def check_file(fname, np_pt_file_flag, no_snap_file_flag):
-    if (re.findall('particles_(.*)\.h5',fname)) and not np_pt_file_flag:
-        return True
-    if (re.findall('snapshot_(.*)\.vt[kur]',fname)) and not no_snap_file_flag:
+def check_file(fname, regex):
+    if re.findall(regex, fname):
         return True
     return False
 
-def get_time_stamp(fname):
-    if(re.findall('particles_(.*)\.h5',f)):
-        return 0.1 * float(re.findall('particles_(.*)\.h5',fname)[0]) # time stamp in ns
-    if(re.findall('snapshot_(.*)\.vt[kur]',f)):
-        return 0.1 * float(re.findall('snapshot_(.*)\.vt[kur]',fname)[0]) # time stamp in ns
+def get_time_stamp(fname, regex):
+    if(re.findall(regex, f)):
+        return 0.1 * float(re.findall(regex, fname)[0]) 
     raise Warning("Incorrect file name in get time stamp %s" % fname)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='clean extra files')
     parser.add_argument('-d','--delete' ,action='store_true'  , default=False)
-    parser.add_argument('-np','--no_particles' ,action='store_true'  , default=False,
-                        help = "True/False - for dont touch particle files [def = 'False']")
-    parser.add_argument('-ns','--no_snapshots' ,action='store_true'  , default=False,
-                        help = "True/False - for dont touch snapshot files [def = 'False']")
     parser.add_argument("-rr", '--reprate', type=float, action='store', default=20e3,   
                         help="Repetition rate 'def = 20e3'")
+    parser.add_argument("--regex", default="particles_(.*)\.h5", help="regex for files [def = 'particles_(.*)\.h5']")
     args = parser.parse_args()
 
 l = os.listdir('.')
@@ -47,8 +40,8 @@ reprate = 20e3 # in ns
 
 file_list = []
 for f in l:
-    if check_file(f, args.no_particles, args.no_snapshots):
-        timestamp = get_time_stamp(f)
+    if check_file(f, args.regex):
+        timestamp = get_time_stamp(f, args.regex)
         file_list.append([f, timestamp, False])
 file_list.sort(key=lambda x : x[1])
 prev_time = file_list[0][1]
