@@ -1,10 +1,26 @@
 import argparse
-from typing import Tuple, Any, List, NamedTuple
+from typing import Tuple, Any, List, NamedTuple, Optional
 
 
 class FileContent(NamedTuple):
-    header: str
+    header: Optional[str]
     content: List[str]
+
+
+def convert_to_text(file_data: FileContent) -> str:
+    '''Puts all data from the file content class into single string'''
+    if file_data.header is None and len(file_data.content) == 0:
+        # empty file case
+        return ""
+    elif len(file_data.content) == 0:
+        # Header only case
+        return file_data.header
+    elif file_data.header is None and len(file_data.content) != 0:
+        # File without header
+        return '\n'.join(file_data.content)
+    else:
+        # File with header and content
+        return '\n'.join((file_data.header, *file_data.content))
 
 
 class RowSorter:
@@ -25,9 +41,11 @@ class RowSorter:
             raise NotImplementedError
 
 
-def read_file(filename: str) -> FileContent:
+def read_file(filename: str, has_header: bool) -> FileContent:
     with open(filename, 'r') as fin:
-        header = fin.readline().strip()
+        header = None
+        if has_header:
+            header = fin.readline().strip()
         data = [l.strip() for l in fin]
         return FileContent(header, data)
 
@@ -52,24 +70,23 @@ def sort_content(file_data: FileContent, col_index: int, col_type: str,
 def callback_sort(args):
     if args.c_index is None and args.c_name is None:
         raise ValueError("Column must be specified by name or index!")
-    file_data = read_file(args.file)
-    if len(file_data.header) == 0 and len(file_data.content) == 0:
-        new_data = ""
-    elif len(file_data.content) == 0:
-        new_data = file_data.header
-    else:
-        col_index = args.c_index
-        if not col_index:
-            col_index = get_col_index_by_name(file_data.header, args.c_name,
-                                              args.delimiter)
-        file_data = sort_content(file_data, col_index, args.c_type,
-                                 args.delimiter, args.reverse)
-        new_data = '\n'.join((file_data.header, *file_data.content))
+    if args.c_index is not None and args.c_name is not None:
+        raise ValueError("Please define column by index OR by name!")
+    file_data = read_file(args.file, args.header)
+    col_index = args.c_index
+    if col_index is None and not args.header:
+        raise ValueError("If columns index is set by its name, header options"
+                         "should be on!")
+    elif col_index is None:
+        col_index = get_col_index_by_name(file_data.header, args.c_name,
+                                          args.delimiter)
+    file_data = sort_content(file_data, col_index, args.c_type,
+                             args.delimiter, args.reverse)
     if args.inplace:
         with open(args.file, 'w') as fout:
-            fout.write(new_data)
+            fout.write(convert_to_text(file_data))
     else:
-        print(new_data)
+        print(convert_to_text(file_data))
 
 
 def setup_parser(parser):

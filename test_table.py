@@ -36,6 +36,17 @@ def test_sort_content_strings():
     assert res_file.content == ["a,  b  ,c", "d,  f  ,g", "w,x,z"]
 
 
+def test_convert_to_text():
+    test = table.FileContent(None, [])  # empty file
+    assert len(table.convert_to_text(test)) == 0
+    test = table.FileContent('header', [])  # with header but no content
+    assert table.convert_to_text(test) == 'header'
+    test = table.FileContent(None, ['one', 'two', 'three'])  # no header with content
+    assert table.convert_to_text(test) == 'one\ntwo\nthree'
+    test = table.FileContent('header', ['one'])  # with header and content
+    assert table.convert_to_text(test) == 'header\none'
+
+
 def test_sort_empty_file(tmp_path):
     fpath = tmp_path / "empty.csv"
     fpath.touch()
@@ -47,11 +58,80 @@ def test_sort_empty_file(tmp_path):
     args.c_index = 0
     args.c_type = 'string'
     args.inplace = True
+    args.reverse = False
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.readlines()
     assert len(data) == 0
 
-# TODO Add test where we try to sort empty file
-# TODO test with header only file
-# TODO we cannot sort by 0 column!
+
+def test_header_only_file(tmp_path):
+    fpath = tmp_path / "empty.csv"
+    fpath.touch()
+    header = "Header1,Header2,Header3"
+    with open(fpath, 'w') as fout:
+        fout.write(header)
+    args = Namespace()
+    args.delimiter = ","
+    args.file = fpath
+    args.header = True
+    args.c_name = "Header1"
+    args.c_index = None
+    args.c_type = 'string'
+    args.inplace = True
+    args.reverse = False
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+    assert data == header
+
+
+def test_sort_file_by_one_column_1(tmp_path):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    r1 = "1;2;3"
+    r2 = "2;3;4"
+    r3 = "3;4;5"
+    r4 = "4;5;6"
+    r5 = "5;6;7"
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((r4, r5, r3, r1, r2)))
+    args = Namespace()
+    args.delimiter = ";"
+    args.file = fpath
+    args.header = False
+    args.c_name = None
+    args.c_index = 0
+    args.c_type = 'number'
+    args.inplace = True
+    args.reverse = False
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+    assert data == '\n'.join((r1, r2, r3, r4, r5))
+
+
+def test_sort_file_by_one_column_2(tmp_path):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    header = 'one;two;three'
+    r1 = "1;2;a"
+    r2 = "2;3;b"
+    r3 = "3;4;c"
+    r4 = "4;5;d"
+    r5 = "5;6;e"
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((header, r4, r5, r3, r1, r2)))
+    args = Namespace()
+    args.delimiter = ";"
+    args.file = fpath
+    args.header = True
+    args.c_name = 'three'
+    args.c_index = None
+    args.c_type = 'string'
+    args.inplace = True
+    args.reverse = True
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+    assert data == '\n'.join((header, r5, r4, r3, r2, r1))
