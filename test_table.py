@@ -1,5 +1,5 @@
 import table
-
+from argparse import Namespace
 
 def test_get_col_index_by_name():
     header = "One;TwO;THREE"
@@ -36,5 +36,22 @@ def test_sort_content_strings():
     assert res_file.content == ["a,  b  ,c", "d,  f  ,g", "w,x,z"]
 
 
-# TODO Add some test which actually sorts the file content
+def test_sort_empty_file(tmp_path):
+    fpath = tmp_path / "empty.csv"
+    fpath.touch()
+    args = Namespace()
+    args.delimiter = ";"
+    args.file = fpath
+    args.header = True
+    args.c_name = None
+    args.c_index = 0
+    args.c_type = 'string'
+    args.inplace = True
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.readlines()
+    assert len(data) == 0
+
 # TODO Add test where we try to sort empty file
+# TODO test with header only file
+# TODO we cannot sort by 0 column!

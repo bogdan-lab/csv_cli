@@ -50,16 +50,21 @@ def sort_content(file_data: FileContent, col_index: int, col_type: str,
 
 
 def callback_sort(args):
-    if not args.c_index and not args.c_name:
+    if args.c_index is None and args.c_name is None:
         raise ValueError("Column must be specified by name or index!")
     file_data = read_file(args.file)
-    col_index = args.c_index
-    if not col_index:
-        col_index = get_col_index_by_name(file_data.header, args.c_name,
-                                          args.delimiter)
-    file_data = sort_content(file_data, col_index, args.c_type, args.delimiter,
-                             args.reverse)
-    new_data = '\n'.join((file_data.header, *file_data.content))
+    if len(file_data.header) == 0 and len(file_data.content) == 0:
+        new_data = ""
+    elif len(file_data.content) == 0:
+        new_data = file_data.header
+    else:
+        col_index = args.c_index
+        if not col_index:
+            col_index = get_col_index_by_name(file_data.header, args.c_name,
+                                              args.delimiter)
+        file_data = sort_content(file_data, col_index, args.c_type,
+                                 args.delimiter, args.reverse)
+        new_data = '\n'.join((file_data.header, *file_data.content))
     if args.inplace:
         with open(args.file, 'w') as fout:
             fout.write(new_data)
