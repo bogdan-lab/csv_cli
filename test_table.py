@@ -3,16 +3,18 @@ from argparse import Namespace
 import datetime
 
 
-def test_get_col_index_by_name():
+def test_get_col_index():
     header = "One;TwO;THREE"
-    assert table.get_col_index_by_name(header, "TWO", ";") == 1
-    assert table.get_col_index_by_name(header, "one", ";") == 0
-    assert table.get_col_index_by_name(header, "Three", ";") == 2
+    assert table.get_col_indexes(None, header, ["TWO"], ";") == [1]
+    assert table.get_col_indexes(None, header, ["one"], ";") == [0]
+    assert table.get_col_indexes(None, header, ["Three"], ";") == [2]
+    assert table.get_col_indexes(None, header, ["one", 'three'], ";") == [0, 2]
 
     header = " \t one, \t two  , three  \t   "
-    assert table.get_col_index_by_name(header, "TWO", ",") == 1
-    assert table.get_col_index_by_name(header, "one", ",") == 0
-    assert table.get_col_index_by_name(header, "Three", ",") == 2
+    assert table.get_col_indexes(None, header, ["TWO"], ",") == [1]
+    assert table.get_col_indexes(None, header, ["one"], ",") == [0]
+    assert table.get_col_indexes(None, header, ["Three"], ",") == [2]
+    assert table.get_col_indexes(None, header, ["one", 'three'], ",") == [0, 2]
 
 
 def test_sort_content_numbers():

@@ -71,13 +71,6 @@ def read_file(filename: str, has_header: bool) -> FileContent:
         return FileContent(header, tuple(l.rstrip('\n') for l in fin))
 
 
-def get_col_index_by_name(header: str, col_name: str, delimiter: str) -> int:
-    '''Searches for the column name in header and returns the coresponding
-    index. Search is case insensitive'''
-    name_list = [el.strip() for el in header.casefold().split(delimiter)]
-    return name_list.index(col_name.casefold())
-
-
 def sort_content(file_data: FileContent, col_indexes: List[int],
                  col_types: List[str], delimiter: str, rev_order: bool,
                  time_fmt: str) -> FileContent:
@@ -89,12 +82,14 @@ def sort_content(file_data: FileContent, col_indexes: List[int],
                                                       reverse=rev_order)))
 
 
-def get_column_index(arg_index: int, header: str, arg_col_name: str,
-                     arg_delimiter: str) -> int:
-    if arg_index is not None:
-        return arg_index
-    return [get_col_index_by_name(header, name, arg_delimiter)
-            for name in arg_col_name]
+def get_col_indexes(col_indexes: List[int], header: str, col_names: List[str],
+                    delimiter: str) -> List[int]:
+    '''Returns column indexes selected by user either directly or according to
+    column names in the header'''
+    if col_indexes is not None:
+        return col_indexes
+    name_list = [el.strip() for el in header.casefold().split(delimiter)]
+    return [name_list.index(cn.casefold()) for cn in col_names]
 
 
 def print_to_std_out(content: str, filename: str,
@@ -128,8 +123,8 @@ def callback_sort(args):
     check_arguments(args)
     for file in args.files:
         file_data = read_file(file, args.header)
-        col_index = get_column_index(args.c_index, file_data.header,
-                                     args.c_name, args.delimiter)
+        col_index = get_col_indexes(args.c_index, file_data.header,
+                                    args.c_name, args.delimiter)
         file_data = sort_content(file_data, col_index, args.c_type,
                                  args.delimiter, args.reverse, args.time_fmt)
         if args.inplace:
