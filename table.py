@@ -1,5 +1,5 @@
 import argparse
-from typing import Tuple, Any, NamedTuple, Optional
+from typing import Tuple, Any, NamedTuple, Optional, List
 import datetime
 from enum import Enum
 
@@ -36,23 +36,31 @@ def convert_to_text(file_data: FileContent) -> str:
 class RowSorter:
     '''Defines the comparator for sorting rows in the file according to the
     arguments passed by user.'''
-    def __init__(self, col_index: int, col_type: str, delimiter: str,
-                 time_fmt: str) -> None:
-        self.col_index = col_index
-        self.col_type = ColumnType(col_type)
+    def __init__(self, col_indexes: List[int], col_types: List[str],
+                 delimiter: str, time_fmt: str) -> None:
+        self.col_indexes = col_indexes
+        self.col_types = [ColumnType(ct) for ct in col_types]
         self.delimiter = delimiter
         self.time_fmt = time_fmt
 
-    def comparator(self, row: str) -> Tuple[Any]:
-        value = row.split(self.delimiter)[self.col_index].strip()
-        if self.col_type is ColumnType.NUMBER:
-            return (float(value),)
-        elif self.col_type is ColumnType.STRING:
-            return (value, )
-        elif self.col_type is ColumnType.TIME:
-            return (datetime.datetime.strptime(value, self.time_fmt), )
+    def _convert_value(self, value: str, v_type: ColumnType) -> Any:
+        if v_type is ColumnType.NUMBER:
+            return float(value)
+        elif v_type is ColumnType.STRING:
+            return value
+        elif v_type is ColumnType.TIME:
+            return datetime.datetime.strptime(value, self.time_fmt)
         else:
             raise NotImplementedError
+
+    def _value_iterator(self, splitted_row: List[str]):
+        for i, row_idx in enumerate(self.col_indexes):
+            yield self._convert_value(splitted_row[row_idx].strip(),
+                                      self.col_types[i])
+
+    def comparator(self, row: str) -> Tuple[Any]:
+        splitted_row = row.split(self.delimiter)
+        return tuple(el for el in self._value_iterator(splitted_row))
 
 
 def read_file(filename: str, has_header: bool) -> FileContent:
@@ -69,25 +77,24 @@ def get_col_index_by_name(header: str, col_name: str, delimiter: str) -> int:
     name_list = [el.strip() for el in header.casefold().split(delimiter)]
     return name_list.index(col_name.casefold())
 
-def sort_content(file_data: FileContent, col_index: int, col_type: str,
-                 delimiter: str, rev_order: bool,
+
+def sort_content(file_data: FileContent, col_indexes: List[int],
+                 col_types: List[str], delimiter: str, rev_order: bool,
                  time_fmt: str) -> FileContent:
     '''Sorts the content field in the FileContent object according to the
     settings'''
-    sorter = RowSorter(col_index, col_type, delimiter, time_fmt)
+    sorter = RowSorter(col_indexes, col_types, delimiter, time_fmt)
     return FileContent(file_data.header, tuple(sorted(file_data.content,
                                                       key=sorter.comparator,
                                                       reverse=rev_order)))
 
 
-def get_column_index(arg_index: int, has_header: bool, header: str,
-                     arg_col_name: str, arg_delimiter: str) -> int:
+def get_column_index(arg_index: int, header: str, arg_col_name: str,
+                     arg_delimiter: str) -> int:
     if arg_index is not None:
         return arg_index
-    if not has_header:
-        raise ValueError("If columns index is set by its name, header options"
-                         "should be on!")
-    return get_col_index_by_name(header, arg_col_name, arg_delimiter)
+    return [get_col_index_by_name(header, name, arg_delimiter)
+            for name in arg_col_name]
 
 
 def print_to_std_out(content: str, filename: str,
@@ -98,16 +105,31 @@ def print_to_std_out(content: str, filename: str,
         print(content)
 
 
-def callback_sort(args):
+def check_arguments(args) -> None:
     if args.c_index is None and args.c_name is None:
         raise ValueError("Column must be specified by name or index!")
     if args.c_index is not None and args.c_name is not None:
         raise ValueError("Please define column by index OR by name!")
+    if args.c_index is None:
+        if len(args.c_name) != len(args.c_type):
+            raise ValueError("Number of columns should be equal to number of"
+                             " provided number of column types")
+        if not args.header:
+            raise ValueError("If columns index is set by its name, header"
+                             " options should be on!")
+    if args.c_name is None:
+        if len(args.c_index) != len(args.c_type):
+            raise ValueError("Number of columns should be equal to number of"
+                             " provided number of column types")
+
+
+def callback_sort(args):
+    '''Performes sorting files on the command line request'''
+    check_arguments(args)
     for file in args.files:
         file_data = read_file(file, args.header)
-        col_index = get_column_index(args.c_index, args.header,
-                                     file_data.header, args.c_name,
-                                     args.delimiter)
+        col_index = get_column_index(args.c_index, file_data.header,
+                                     args.c_name, args.delimiter)
         file_data = sort_content(file_data, col_index, args.c_type,
                                  args.delimiter, args.reverse, args.time_fmt)
         if args.inplace:
@@ -125,7 +147,7 @@ def setup_parser(parser):
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument("-d", "--delimiter", action="store", type=str, default='\t',
                                help="Delimiter, which separates columns in the file")
-    parent_parser.add_argument("files", nargs="+", action="store",
+    parent_parser.add_argument("-f", "--files", nargs="+", action="store",
                                help="Files with table data which are needed to be sorted")
     parent_parser.add_argument("--header", action="store_false",
                                help="If set table will be considered as the one without header.")
@@ -133,11 +155,14 @@ def setup_parser(parser):
     sort_parser = subparsers.add_parser("sort", parents=[parent_parser],
                                         help="allows to sort rows according to data in certain columns",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    sort_parser.add_argument("--c_name", action="store", default=None,
+    sort_parser.add_argument("--c_name", nargs="+", action="store",
+                             default=None, type=str,
                              help="Column name according to which we want to sort data")
-    sort_parser.add_argument("--c_index", action="store", default=None,
+    sort_parser.add_argument("--c_index", nargs="*", action="store", type=int,
+                             default=None,
                              help="Column index according to which we want to sort data, starts from 0.")
-    sort_parser.add_argument("-as", "--c_type", action="store", default="string",
+    sort_parser.add_argument("-as", "--c_type", nargs="+", action="store",
+                             default="string",
                              choices=[el.value for el in ColumnType],
                              help="Sets type of the values in the chosen column")
     sort_parser.add_argument("-t_fmt", "--time_fmt", action="store", default=DEFAULT_TIME_FORMAT,
