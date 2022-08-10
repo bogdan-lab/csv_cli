@@ -41,9 +41,9 @@ def test_convert_to_text():
     assert len(table.convert_to_text(test)) == 0
     test = table.FileContent('header', [])  # with header but no content
     assert table.convert_to_text(test) == 'header'
-    test = table.FileContent(None, ['one', 'two', 'three'])  # no header with content
+    test = table.FileContent(None, ['one\n', 'two\n', 'three'])  # no header with content
     assert table.convert_to_text(test) == 'one\ntwo\nthree'
-    test = table.FileContent('header', ['one'])  # with header and content
+    test = table.FileContent('header\n', ['one'])  # with header and content
     assert table.convert_to_text(test) == 'header\none'
 
 
@@ -195,3 +195,44 @@ def test_sort_file_by_one_column_4(tmp_path):
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r3, r5, r1, r4, r2))
+
+
+def test_sort_file_without_modification(tmp_path):
+    '''Order of rows should be the only thing that is modified'''
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    header = '    one;   two   ;three  \t '
+    r1 = "   1;  1  ;1   "
+    r2 = "   2;  2  ;2   "
+    r3 = "   3;  3  ;3   "
+    r4 = "   4;  4  ;4   "
+    r5 = "   5;  5  ;5   "
+    r6 = "   6;  6  ;6   "
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((header, r1, r2, r3, r4, r5, r6)))
+    args = Namespace()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.header = True
+    args.c_name = 'one'
+    args.c_index = None
+    args.c_type = 'number'
+    args.inplace = True
+    args.reverse = False
+    args.time_fmt = "%Y_%m_%d"
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+    assert data == '\n'.join((header, r1, r2, r3, r4, r5, r6))
+    # sort according to the second column
+    args.c_name = "two"
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+    assert data == '\n'.join((header, r1, r2, r3, r4, r5, r6))
+    # sort according to the last column
+    args.c_name = "three"
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+    assert data == '\n'.join((header, r1, r2, r3, r4, r5, r6))
