@@ -3,6 +3,7 @@ from typing import Tuple, Any, List, NamedTuple, Optional
 import datetime
 from enum import Enum
 
+DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 class ColumnType(Enum):
     STRING = "string"
@@ -155,7 +156,7 @@ def setup_parser(parser):
     sort_parser.add_argument("-as", "--c_type", action="store", default="string",
                              choices=[el.value for el in ColumnType],
                              help="Sets type of the values in the chosen column")
-    sort_parser.add_argument("-t_fmt", "--time_fmt", action="store", default="%Y-%m-%d %H:%M:%S",
+    sort_parser.add_argument("-t_fmt", "--time_fmt", action="store", default=DEFAULT_TIME_FORMAT,
                              help="time string format which will be used in order to parse time values")
     sort_parser.add_argument("-i", "--inplace", action="store_true",
                              help="If set sorting will be performed inplace")

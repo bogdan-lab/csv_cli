@@ -1,6 +1,7 @@
 import table
 from argparse import Namespace
 
+
 def test_get_col_index_by_name():
     header = "One;TwO;THREE"
     assert table.get_col_index_by_name(header, "TWO", ";") == 1
@@ -59,7 +60,7 @@ def test_sort_empty_file(tmp_path):
     args.c_type = 'string'
     args.inplace = True
     args.reverse = False
-    args.time_fmt = "%Y-%m-%d %H:%M:%S"
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.readlines()
@@ -81,7 +82,7 @@ def test_header_only_file(tmp_path):
     args.c_type = 'string'
     args.inplace = True
     args.reverse = False
-    args.time_fmt = "%Y-%m-%d %H:%M:%S"
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -107,7 +108,7 @@ def test_sort_file_by_one_column_1(tmp_path):
     args.c_type = 'number'
     args.inplace = True
     args.reverse = False
-    args.time_fmt = "%Y-%m-%d %H:%M:%S"
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -134,7 +135,7 @@ def test_sort_file_by_one_column_2(tmp_path):
     args.c_type = 'string'
     args.inplace = True
     args.reverse = True
-    args.time_fmt = "%Y-%m-%d %H:%M:%S"
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -162,7 +163,7 @@ def test_sort_file_by_one_column_3(tmp_path):
     args.c_type = 'time'
     args.inplace = True
     args.reverse = False
-    args.time_fmt = "%Y-%m-%d %H:%M:%S"
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
