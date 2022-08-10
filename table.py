@@ -68,7 +68,8 @@ def get_col_index_by_name(header: str, col_name: str, delimiter: str) -> int:
 
 
 def sort_content(file_data: FileContent, col_index: int, col_type: str,
-                 delimiter: str, rev_order: bool, time_fmt: str) -> FileContent:
+                 delimiter: str, rev_order: bool,
+                 time_fmt: str) -> FileContent:
     '''Sorts the content field in the FileContent object according to the
     settings'''
     sorter = RowSorter(col_index, col_type, delimiter, time_fmt)
@@ -77,26 +78,42 @@ def sort_content(file_data: FileContent, col_index: int, col_type: str,
                                                 reverse=rev_order))
 
 
+def get_column_index(arg_index: int, has_header: bool, header: str,
+                     arg_col_name: str, arg_delimiter: str) -> int:
+    if arg_index is not None:
+        return arg_index
+    if not has_header:
+        raise ValueError("If columns index is set by its name, header options"
+                         "should be on!")
+    return get_col_index_by_name(header, arg_col_name, arg_delimiter)
+
+
+def print_to_std_out(content: str, filename: str,
+                     need_to_mark_filename: bool) -> None:
+    if need_to_mark_filename:
+        print('\n'.join((f"==> {filename} <==", content, "")))
+    else:
+        print(content)
+
+
 def callback_sort(args):
     if args.c_index is None and args.c_name is None:
         raise ValueError("Column must be specified by name or index!")
     if args.c_index is not None and args.c_name is not None:
         raise ValueError("Please define column by index OR by name!")
-    file_data = read_file(args.file, args.header)
-    col_index = args.c_index
-    if col_index is None and not args.header:
-        raise ValueError("If columns index is set by its name, header options"
-                         "should be on!")
-    elif col_index is None:
-        col_index = get_col_index_by_name(file_data.header, args.c_name,
-                                          args.delimiter)
-    file_data = sort_content(file_data, col_index, args.c_type,
-                             args.delimiter, args.reverse, args.time_fmt)
-    if args.inplace:
-        with open(args.file, 'w') as fout:
-            fout.write(convert_to_text(file_data))
-    else:
-        print(convert_to_text(file_data))
+    for file in args.files:
+        file_data = read_file(file, args.header)
+        col_index = get_column_index(args.c_index, args.header,
+                                     file_data.header, args.c_name,
+                                     args.delimiter)
+        file_data = sort_content(file_data, col_index, args.c_type,
+                                 args.delimiter, args.reverse, args.time_fmt)
+        if args.inplace:
+            with open(file, 'w') as fout:
+                fout.write(convert_to_text(file_data))
+        else:
+            print_to_std_out(convert_to_text(file_data), file,
+                             need_to_mark_filename=len(args.files) > 1)
 
 
 def setup_parser(parser):
@@ -106,8 +123,8 @@ def setup_parser(parser):
     parent_parser = argparse.ArgumentParser(add_help=False)
     parent_parser.add_argument("-d", "--delimiter", action="store", type=str, default='\t',
                                help="Delimiter, which separates columns in the file")
-    parent_parser.add_argument("-f", "--file", action="store",
-                               help="File with table data which is needed to be sorted")
+    parent_parser.add_argument("files", nargs="+", action="store",
+                               help="Files with table data which are needed to be sorted")
     parent_parser.add_argument("--header", action="store_false",
                                help="If set table will be considered as the one without header.")
 

@@ -52,7 +52,7 @@ def test_sort_empty_file(tmp_path):
     fpath.touch()
     args = Namespace()
     args.delimiter = ";"
-    args.file = fpath
+    args.files = [fpath]
     args.header = True
     args.c_name = None
     args.c_index = 0
@@ -74,7 +74,7 @@ def test_header_only_file(tmp_path):
         fout.write(header)
     args = Namespace()
     args.delimiter = ","
-    args.file = fpath
+    args.files = [fpath]
     args.header = True
     args.c_name = "Header1"
     args.c_index = None
@@ -100,7 +100,7 @@ def test_sort_file_by_one_column_1(tmp_path):
         fout.write('\n'.join((r4, r5, r3, r1, r2)))
     args = Namespace()
     args.delimiter = ";"
-    args.file = fpath
+    args.files = [fpath]
     args.header = False
     args.c_name = None
     args.c_index = 0
@@ -127,7 +127,7 @@ def test_sort_file_by_one_column_2(tmp_path):
         fout.write('\n'.join((header, r4, r5, r3, r1, r2)))
     args = Namespace()
     args.delimiter = ";"
-    args.file = fpath
+    args.files = [fpath]
     args.header = True
     args.c_name = 'three'
     args.c_index = None
@@ -155,7 +155,7 @@ def test_sort_file_by_one_column_3(tmp_path):
         fout.write('\n'.join((header, r4, r5, r3, r1, r2)))
     args = Namespace()
     args.delimiter = ";"
-    args.file = fpath
+    args.files = [fpath]
     args.header = True
     args.c_name = 'one'
     args.c_index = None
@@ -183,7 +183,7 @@ def test_sort_file_by_one_column_4(tmp_path):
         fout.write('\n'.join((header, r4, r5, r3, r1, r2)))
     args = Namespace()
     args.delimiter = ";"
-    args.file = fpath
+    args.files = [fpath]
     args.header = True
     args.c_name = 'one'
     args.c_index = None
