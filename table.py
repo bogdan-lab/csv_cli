@@ -1,7 +1,12 @@
 import argparse
 from typing import Tuple, Any, List, NamedTuple, Optional
 import datetime
+from enum import Enum
 
+class ColumnType(Enum):
+    STRING = "string"
+    NUMBER = "number"
+    TIME = "time"
 
 class FileContent(NamedTuple):
     header: Optional[str]
@@ -30,17 +35,17 @@ class RowSorter:
     def __init__(self, col_index: int, col_type: str, delimiter: str,
                  time_fmt: str) -> None:
         self.col_index = col_index
-        self.col_type = col_type
+        self.col_type = ColumnType(col_type)
         self.delimiter = delimiter
         self.time_fmt = time_fmt
 
     def comparator(self, row: str) -> Tuple[Any]:
         value = row.split(self.delimiter)[self.col_index]
-        if self.col_type == 'number':
+        if self.col_type is ColumnType.NUMBER:
             return (float(value),)
-        elif self.col_type == 'string':
+        elif self.col_type is ColumnType.STRING:
             return (value, )
-        elif self.col_type == 'time':
+        elif self.col_type is ColumnType.TIME:
             return (datetime.datetime.strptime(value, self.time_fmt), )
         else:
             raise NotImplementedError
@@ -114,7 +119,7 @@ def setup_parser(parser):
     sort_parser.add_argument("--c_index", action="store", default=None,
                              help="Column index according to which we want to sort data, starts from 0.")
     sort_parser.add_argument("-as", "--c_type", action="store", default="string",
-                             choices=["string", "number", "time"],
+                             choices=[el.value for el in ColumnType],
                              help="Sets type of the values in the chosen column")
     sort_parser.add_argument("-t_fmt", "--time_fmt", action="store", default="%Y-%m-%d %H:%M:%S",
                              help="time string format which will be used in order to parse time values")
