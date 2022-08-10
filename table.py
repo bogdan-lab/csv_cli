@@ -1,5 +1,6 @@
 import argparse
 from typing import Tuple, Any, List, NamedTuple, Optional
+import datetime
 
 
 class FileContent(NamedTuple):
@@ -26,10 +27,12 @@ def convert_to_text(file_data: FileContent) -> str:
 class RowSorter:
     '''Defines the comparator for sorting rows in the file according to the
     arguments passed by user.'''
-    def __init__(self, col_index: int, col_type: str, delimiter: str) -> None:
+    def __init__(self, col_index: int, col_type: str, delimiter: str,
+                 time_fmt: str) -> None:
         self.col_index = col_index
         self.col_type = col_type
         self.delimiter = delimiter
+        self.time_fmt = time_fmt
 
     def comparator(self, row: str) -> Tuple[Any]:
         value = row.split(self.delimiter)[self.col_index]
@@ -37,6 +40,8 @@ class RowSorter:
             return (float(value),)
         elif self.col_type == 'string':
             return (value, )
+        elif self.col_type == 'time':
+            return (datetime.datetime.strptime(value, self.time_fmt), )
         else:
             raise NotImplementedError
 
@@ -58,10 +63,10 @@ def get_col_index_by_name(header: str, col_name: str, delimiter: str) -> int:
 
 
 def sort_content(file_data: FileContent, col_index: int, col_type: str,
-                 delimiter: str, rev_order: bool) -> FileContent:
+                 delimiter: str, rev_order: bool, time_fmt: str) -> FileContent:
     '''Sorts the content field in the FileContent object according to the
     settings'''
-    sorter = RowSorter(col_index, col_type, delimiter)
+    sorter = RowSorter(col_index, col_type, delimiter, time_fmt)
     return FileContent(file_data.header, sorted(file_data.content,
                                                 key=sorter.comparator,
                                                 reverse=rev_order))
@@ -81,7 +86,7 @@ def callback_sort(args):
         col_index = get_col_index_by_name(file_data.header, args.c_name,
                                           args.delimiter)
     file_data = sort_content(file_data, col_index, args.c_type,
-                             args.delimiter, args.reverse)
+                             args.delimiter, args.reverse, args.time_fmt)
     if args.inplace:
         with open(args.file, 'w') as fout:
             fout.write(convert_to_text(file_data))
@@ -111,6 +116,8 @@ def setup_parser(parser):
     sort_parser.add_argument("-as", "--c_type", action="store", default="string",
                              choices=["string", "number", "time"],
                              help="Sets type of the values in the chosen column")
+    sort_parser.add_argument("-t_fmt", "--time_fmt", action="store", default="%Y-%m-%d %H:%M:%S",
+                             help="time string format which will be used in order to parse time values")
     sort_parser.add_argument("-i", "--inplace", action="store_true",
                              help="If set sorting will be performed inplace")
     sort_parser.add_argument("-r", "--reverse", action="store_true",
