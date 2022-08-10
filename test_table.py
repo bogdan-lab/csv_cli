@@ -16,25 +16,25 @@ def test_get_col_index_by_name():
 
 def test_sort_content_numbers():
     header = "One;Two;Three"
-    test_file = table.FileContent(header, ["5;6;7", "1;2;3", "4;2;0"])
+    test_file = table.FileContent(header, ("5;6;7", "1;2;3", "4;2;0"))
     res_file = table.sort_content(test_file, col_index=0, col_type="number",
                                   delimiter=';', rev_order=False, time_fmt="")
     assert res_file.header == header
-    assert res_file.content == ["1;2;3", "4;2;0", "5;6;7"]
+    assert res_file.content == ("1;2;3", "4;2;0", "5;6;7")
 
     res_file = table.sort_content(test_file, col_index=2, col_type="number",
                                   delimiter=';', rev_order=True, time_fmt="")
     assert res_file.header == header
-    assert res_file.content == ["5;6;7", "1;2;3", "4;2;0"]
+    assert res_file.content == ("5;6;7", "1;2;3", "4;2;0")
 
 
 def test_sort_content_strings():
     header = "One;Two;Three"
-    test_file = table.FileContent(header, ["d,  f  ,g", "a,  b  ,c", "w,x,z"])
+    test_file = table.FileContent(header, ("d,  f  ,g", "a,  b  ,c", "w,x,z"))
     res_file = table.sort_content(test_file, col_index=1, col_type="string",
                                   delimiter=',', rev_order=False, time_fmt="")
     assert res_file.header == header
-    assert res_file.content == ["a,  b  ,c", "d,  f  ,g", "w,x,z"]
+    assert res_file.content == ("a,  b  ,c", "d,  f  ,g", "w,x,z")
 
 
 def test_convert_to_text():
@@ -42,9 +42,9 @@ def test_convert_to_text():
     assert len(table.convert_to_text(test)) == 0
     test = table.FileContent('header', [])  # with header but no content
     assert table.convert_to_text(test) == 'header'
-    test = table.FileContent(None, ['one\n', 'two\n', 'three'])  # no header with content
+    test = table.FileContent(None, ['one', 'two', 'three'])  # no header with content
     assert table.convert_to_text(test) == 'one\ntwo\nthree'
-    test = table.FileContent('header\n', ['one'])  # with header and content
+    test = table.FileContent('header', ['one'])  # with header and content
     assert table.convert_to_text(test) == 'header\none'
 
 

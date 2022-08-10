@@ -1,9 +1,10 @@
 import argparse
-from typing import Tuple, Any, List, NamedTuple, Optional
+from typing import Tuple, Any, NamedTuple, Optional
 import datetime
 from enum import Enum
 
 DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 class ColumnType(Enum):
     STRING = "string"
@@ -13,20 +14,7 @@ class ColumnType(Enum):
 
 class FileContent(NamedTuple):
     header: Optional[str]
-    content: List[str]
-
-
-def fix_new_line(content: List[str]) -> None:
-    '''It is not guaranteed that after the last row in the file \n symbol
-    will always be present. After sorting, this row will be mixed up with
-    others and we will have to move \n symbol from the new last row to the
-    one which was placed in the middle of the content
-    '''
-    for i in range(len(content)):
-        if content[i][-1] != '\n':
-            content[i] += '\n'
-            content[-1] = content[-1][:-1]
-            break
+    content: Tuple[str]
 
 
 def convert_to_text(file_data: FileContent) -> str:
@@ -39,12 +27,10 @@ def convert_to_text(file_data: FileContent) -> str:
         return file_data.header
     elif file_data.header is None and len(file_data.content) != 0:
         # File without header
-        fix_new_line(file_data.content)
-        return ''.join(file_data.content)
+        return '\n'.join(file_data.content)
     else:
         # File with header and content
-        fix_new_line(file_data.content)
-        return ''.join((file_data.header, *file_data.content))
+        return '\n'.join((file_data.header, *file_data.content))
 
 
 class RowSorter:
@@ -73,9 +59,8 @@ def read_file(filename: str, has_header: bool) -> FileContent:
     with open(filename, 'r') as fin:
         header = None
         if has_header:
-            header = fin.readline()
-        data = [l for l in fin]
-        return FileContent(header, data)
+            header = fin.readline().rstrip('\n')
+        return FileContent(header, tuple(l.rstrip('\n') for l in fin))
 
 
 def get_col_index_by_name(header: str, col_name: str, delimiter: str) -> int:
@@ -84,16 +69,15 @@ def get_col_index_by_name(header: str, col_name: str, delimiter: str) -> int:
     name_list = [el.strip() for el in header.casefold().split(delimiter)]
     return name_list.index(col_name.casefold())
 
-
 def sort_content(file_data: FileContent, col_index: int, col_type: str,
                  delimiter: str, rev_order: bool,
                  time_fmt: str) -> FileContent:
     '''Sorts the content field in the FileContent object according to the
     settings'''
     sorter = RowSorter(col_index, col_type, delimiter, time_fmt)
-    return FileContent(file_data.header, sorted(file_data.content,
-                                                key=sorter.comparator,
-                                                reverse=rev_order))
+    return FileContent(file_data.header, tuple(sorted(file_data.content,
+                                                      key=sorter.comparator,
+                                                      reverse=rev_order)))
 
 
 def get_column_index(arg_index: int, has_header: bool, header: str,
