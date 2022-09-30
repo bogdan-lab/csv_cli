@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import argparse
 import json
-import numpy as np
 import re
 from collections import defaultdict
 
@@ -12,12 +11,12 @@ def read_info(fname, regex, time_name):
     regex = re.compile(regex)
     with open(fname, "r") as f:
         json_data = json.load(f)
-    data = []
+    data = {"names": [], "time": []}
     for b_mark in json_data["benchmarks"]:
         if regex.search(b_mark["name"]):
-            data.append(
-                    {"name": b_mark["name"],
-                     "time": b_mark[time_name] * TIME_MULTIPLIERS[b_mark["time_unit"]]})
+            data["names"].append(b_mark["name"])
+            data["time"].append(
+                    b_mark[time_name] * TIME_MULTIPLIERS[b_mark["time_unit"]])
     return data
 
 
@@ -41,51 +40,49 @@ def setup_parser(parser):
                         "separate picture will be created")
 
 
-def normalize_times_dict(data):
-    min_val = min(el["time"] for el in data)
-    for i in range(len(data)):
-        data[i]["time"] /= min_val
-
-def normalize_times_list(time_list):
+def normalize_times(time_list):
     min_val = min(time_list)
     for i in range(len(time_list)):
         time_list[i] /= min_val
 
+
 def get_group_name(name, index):
+    # Here we can take only suffix, since in check_separate we have already
+    # checked that prefix for all values is the same
     return name.split('/')[index]
 
 
 def check_separate_groups(data, idx):
     groups = set()
-    for el in data:
-        groups.add(get_group_name(el["name"], idx))
+    for bench_name in data["names"]:
+        groups.add(get_group_name(bench_name, idx))
     return len(groups) > 1
 
 
 def find_separating_index(data):
-    min_slash_num = min([el["name"].count('/') for el in data])
+    min_slash_num = min([name.count('/') for name in data["names"]])
     for idx in range(0, min_slash_num+1):
         if check_separate_groups(data, idx):
             break
     return idx
 
 
-def group_data_default(data):
+def group_data(data, group_name_getter):
     sep_idx = find_separating_index(data)
     result = defaultdict(lambda: defaultdict(list))
-    for el in data:
-        group_name = get_group_name(el["name"], sep_idx)
-        result[group_name]["names"].append(el["name"])
-        result[group_name]["time"].append(el["time"])
+    for name, time in zip(data["names"], data["time"]):
+        group_name = group_name_getter(name, sep_idx)
+        result[group_name]["names"].append(name)
+        result[group_name]["time"].append(time)
     return result
 
 
 def plot_data_general(data, args):
     time_unit = "ns"
     if args.norm:
-        normalize_times_dict(data)
+        normalize_times(data["time"])
         time_unit = "a.u."
-    groups = group_data_default(data)
+    groups = group_data(data, get_group_name)
     plt.figure(figsize=[int(val) for val in args.figsize.split()])
     plt.grid(zorder=0)
     for key, val in groups.items():
@@ -107,22 +104,12 @@ def get_case_parameters(benchmark_full_name, sep_index):
     return benchmark_full_name[i:]
 
 
-def group_data_separate(data):
-    sep_idx = find_separating_index(data)
-    result = defaultdict(lambda: defaultdict(list))
-    for el in data:
-        group_name = get_case_parameters(el["name"], sep_idx)
-        result[group_name]["names"].append(el["name"])
-        result[group_name]["time"].append(el["time"])
-    return result
-
-
 def plot_data_separate(data, args):
     time_unit = "ns"
-    groups = group_data_separate(data)
+    groups = group_data(data, get_case_parameters)
     for key, val in groups.items():
         if args.norm:
-            normalize_times_list(val["time"])
+            normalize_times(val["time"])
             time_unit = "a.u."
         plt.figure(figsize=[int(val) for val in args.figsize.split()])
         plt.grid(zorder=0)
