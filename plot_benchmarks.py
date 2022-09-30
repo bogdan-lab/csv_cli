@@ -36,13 +36,20 @@ def setup_parser(parser):
                         help="Python regex for filtering which data to plot")
     parser.add_argument("--log", action="store_true", default=False,
                         help="Sets the time axis scale to be logarithmic")
+    parser.add_argument("--separate", action="store_true", default=False,
+                        help="If true for each group of input parameters "
+                        "separate picture will be created")
 
 
-def normalize_times(data):
+def normalize_times_dict(data):
     min_val = min(el["time"] for el in data)
     for i in range(len(data)):
         data[i]["time"] /= min_val
 
+def normalize_times_list(time_list):
+    min_val = min(time_list)
+    for i in range(len(time_list)):
+        time_list[i] /= min_val
 
 def get_group_name(name, index):
     return name.split('/')[index]
@@ -63,7 +70,7 @@ def find_separating_index(data):
     return idx
 
 
-def group_data(data):
+def group_data_default(data):
     sep_idx = find_separating_index(data)
     result = defaultdict(lambda: defaultdict(list))
     for el in data:
@@ -73,12 +80,12 @@ def group_data(data):
     return result
 
 
-def plot_data(data, args):
+def plot_data_general(data, args):
     time_unit = "ns"
     if args.norm:
-        normalize_times(data)
+        normalize_times_dict(data)
         time_unit = "a.u."
-    groups = group_data(data)
+    groups = group_data_default(data)
     plt.figure(figsize=[int(val) for val in args.figsize.split()])
     plt.grid(zorder=0)
     for key, val in groups.items():
@@ -87,6 +94,44 @@ def plot_data(data, args):
     if(args.log):
         plt.xscale("log")
     plt.tight_layout()
+    plt.show()
+
+
+def get_case_parameters(benchmark_full_name, sep_index):
+    count = 0
+    for i, el in enumerate(benchmark_full_name):
+        if el == "/":
+            count += 1
+        if count == sep_index + 1:
+            break
+    return benchmark_full_name[i:]
+
+
+def group_data_separate(data):
+    sep_idx = find_separating_index(data)
+    result = defaultdict(lambda: defaultdict(list))
+    for el in data:
+        group_name = get_case_parameters(el["name"], sep_idx)
+        result[group_name]["names"].append(el["name"])
+        result[group_name]["time"].append(el["time"])
+    return result
+
+
+def plot_data_separate(data, args):
+    time_unit = "ns"
+    groups = group_data_separate(data)
+    for key, val in groups.items():
+        if args.norm:
+            normalize_times_list(val["time"])
+            time_unit = "a.u."
+        plt.figure(figsize=[int(val) for val in args.figsize.split()])
+        plt.grid(zorder=0)
+        for name, t in zip(val["names"], val["time"]):
+            plt.barh(name, t, zorder=3)
+        plt.xlabel(f"time, {time_unit}")
+        if(args.log):
+            plt.xscale("log")
+        plt.tight_layout()
     plt.show()
 
 
@@ -100,4 +145,7 @@ if __name__ == "__main__":
     setup_parser(parser)
     args = parser.parse_args()
     data = read_info(args.input, args.filter, args.time_name)
-    plot_data(data, args)
+    if args.separate:
+        plot_data_separate(data, args)
+    else:
+        plot_data_general(data, args)
