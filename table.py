@@ -2,6 +2,7 @@ import argparse
 from typing import Tuple, Any, NamedTuple, Optional, List
 import datetime
 from enum import Enum
+import math
 
 DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -46,7 +47,8 @@ class RowSorter:
 
     def _convert_value(self, value: str, v_type: ColumnType) -> Any:
         if v_type is ColumnType.NUMBER:
-            return float(value)
+            res = float(value)
+            return math.inf if math.isnan(res) else res
         elif v_type is ColumnType.STRING:
             return value
         elif v_type is ColumnType.TIME:

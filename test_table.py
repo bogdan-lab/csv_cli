@@ -315,3 +315,31 @@ def test_check_arguments():
     table.check_arguments(args)
     assert len(args.c_type) == len(args.c_name)
     assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)
+
+
+def test_sort_according_to_the_column_with_nan(tmp_path):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    r1 = "4.5;one"
+    r2 = "nan;first"
+    r3 = "-1.0;two"
+    r4 = "7.9;big"
+    r5 = "nan;last"
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((r1, r2, r3, r4, r5)))
+    args = Namespace()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.no_header = True
+    args.c_index = [0]
+    args.c_type = None
+    args.c_name = None
+    args.inplace = True
+    args.reverse = False
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
+    table.callback_sort(args)
+
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+
+    assert data == '\n'.join((r3, r1, r4, r2, r5))
