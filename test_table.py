@@ -48,7 +48,8 @@ def test_convert_to_text():
     assert len(table.convert_to_text(test)) == 0
     test = table.FileContent('header', [])  # with header but no content
     assert table.convert_to_text(test) == 'header'
-    test = table.FileContent(None, ['one', 'two', 'three'])  # no header with content
+    # no header with content
+    test = table.FileContent(None, ['one', 'two', 'three'])
     assert table.convert_to_text(test) == 'one\ntwo\nthree'
     test = table.FileContent('header', ['one'])  # with header and content
     assert table.convert_to_text(test) == 'header\none'
@@ -72,7 +73,7 @@ def test_sort_empty_file(tmp_path):
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
-    args.header = True
+    args.no_header = False
     args.c_name = None
     args.c_index = [0]
     args.c_type = ['string']
@@ -94,7 +95,7 @@ def test_header_only_file(tmp_path):
     args = Namespace()
     args.delimiter = ","
     args.files = [fpath]
-    args.header = True
+    args.no_header = False
     args.c_name = ["Header1"]
     args.c_index = None
     args.c_type = ['string']
@@ -120,7 +121,7 @@ def test_sort_file_by_one_column_1(tmp_path):
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
-    args.header = False
+    args.no_header = True
     args.c_name = None
     args.c_index = [0]
     args.c_type = ['number']
@@ -147,7 +148,7 @@ def test_sort_file_by_one_column_2(tmp_path):
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
-    args.header = True
+    args.no_header = False
     args.c_name = ['three']
     args.c_index = None
     args.c_type = ['string']
@@ -175,7 +176,7 @@ def test_sort_file_by_one_column_3(tmp_path):
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
-    args.header = True
+    args.no_header = False
     args.c_name = ['one']
     args.c_index = None
     args.c_type = ['time']
@@ -203,7 +204,7 @@ def test_sort_file_by_one_column_4(tmp_path):
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
-    args.header = True
+    args.no_header = False
     args.c_name = ['one']
     args.c_index = None
     args.c_type = ['time']
@@ -232,7 +233,7 @@ def test_sort_file_without_modification(tmp_path):
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
-    args.header = True
+    args.no_header = False
     args.c_name = ['one']
     args.c_index = None
     args.c_type = ['number']
@@ -271,7 +272,7 @@ def test_sort_according_to_several_columns(tmp_path):
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
-    args.header = True
+    args.no_header = False
     args.c_name = ['one', 'three']
     args.c_index = None
     args.c_type = ['number', 'string']
@@ -282,3 +283,35 @@ def test_sort_according_to_several_columns(tmp_path):
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r3, r5, r4, r2, r1))
+
+
+def test_check_arguments():
+    '''If no types were passed we want to automatically assume 
+    that all column types are numeric'''
+    args = Namespace()
+    args.c_index = [1]
+    args.c_name = None
+    args.c_type = None
+    args.no_header = False
+    table.check_arguments(args)
+    assert len(args.c_type) == len(args.c_index)
+    assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)
+
+    args.c_index = [5, 4, 3]
+    args.c_type = []
+    table.check_arguments(args)
+    assert len(args.c_type) == len(args.c_index)
+    assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)
+
+    args.c_index = None
+    args.c_name = ["one"]
+    args.c_type = None
+    table.check_arguments(args)
+    assert len(args.c_type) == len(args.c_name)
+    assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)
+
+    args.c_name = ["one", "two"]
+    args.c_type = []
+    table.check_arguments(args)
+    assert len(args.c_type) == len(args.c_name)
+    assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)

@@ -107,14 +107,18 @@ def check_arguments(args) -> None:
     if args.c_index is not None and args.c_name is not None:
         raise ValueError("Please define column by index OR by name!")
     if args.c_index is None:
-        if len(args.c_name) != len(args.c_type):
+        if args.c_type is None or len(args.c_type) == 0:
+            args.c_type = [ColumnType.NUMBER.value for _ in args.c_name]
+        elif len(args.c_name) != len(args.c_type):
             raise ValueError("Number of columns should be equal to number of"
                              " provided number of column types")
         if args.no_header:
             raise ValueError("If columns index is set by its name, header"
                              " options should be on!")
     if args.c_name is None:
-        if len(args.c_index) != len(args.c_type):
+        if args.c_type is None or len(args.c_type) == 0:
+            args.c_type = [ColumnType.NUMBER.value for _ in args.c_index]
+        elif len(args.c_index) != len(args.c_type):
             raise ValueError("Number of columns should be equal to number of"
                              " provided number of column types")
 
@@ -158,9 +162,10 @@ def setup_parser(parser):
                              default=None,
                              help="Column index according to which we want to sort data, starts from 0.")
     sort_parser.add_argument("-as", "--c_type", nargs="+", action="store",
-                             default="string",
+                             default=None,
                              choices=[el.value for el in ColumnType],
-                             help="Sets type of the values in the chosen column")
+                             help="Sets type of the values in the chosen column. "
+                             "If nothing is set all column values will be interpreted as numbers")
     sort_parser.add_argument("-t_fmt", "--time_fmt", action="store", default=DEFAULT_TIME_FORMAT,
                              help="time string format which will be used in order to parse time values")
     sort_parser.add_argument("-i", "--inplace", action="store_true",
