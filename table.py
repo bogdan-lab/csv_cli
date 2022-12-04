@@ -110,7 +110,7 @@ def check_arguments(args) -> None:
         if len(args.c_name) != len(args.c_type):
             raise ValueError("Number of columns should be equal to number of"
                              " provided number of column types")
-        if not args.header:
+        if args.no_header:
             raise ValueError("If columns index is set by its name, header"
                              " options should be on!")
     if args.c_name is None:
@@ -123,7 +123,7 @@ def callback_sort(args):
     '''Performes sorting files on the command line request'''
     check_arguments(args)
     for file in args.files:
-        file_data = read_file(file, args.header)
+        file_data = read_file(file, not args.no_header)
         col_index = get_col_indexes(args.c_index, file_data.header,
                                     args.c_name, args.delimiter)
         file_data = sort_content(file_data, col_index, args.c_type,
@@ -145,7 +145,7 @@ def setup_parser(parser):
                                help="Delimiter, which separates columns in the file")
     parent_parser.add_argument("-f", "--files", nargs="+", action="store",
                                help="Files with table data which are needed to be sorted")
-    parent_parser.add_argument("--header", action="store_false",
+    parent_parser.add_argument("--no_header", action="store_true",
                                help="If set table will be considered as the one without header.")
 
     sort_parser = subparsers.add_parser("sort", parents=[parent_parser],
