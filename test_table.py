@@ -401,3 +401,30 @@ def test_sort_when_convertion_fails_2(tmp_path):
         data = fin.read()
 
     assert data == '\n'.join((r4, r1, r2, r3, r5, r6))
+
+
+def test_sort_by_string_with_empty_strings(tmp_path):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    header = 'one;two;three'
+    r1 = "1;2;b"
+    r2 = "1;3;-"
+    r3 = "3;4;"
+    r4 = "2;5;d"
+    r5 = "2;6;"
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((header, r1, r2, r3, r4, r5)))
+    args = Namespace()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.no_header = False
+    args.c_name = ['three']
+    args.c_index = None
+    args.c_type = ['string']
+    args.inplace = True
+    args.reverse = False
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+    assert data == '\n'.join((header, r3, r5, r2, r1, r4))
