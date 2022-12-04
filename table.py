@@ -47,12 +47,19 @@ class RowSorter:
 
     def _convert_value(self, value: str, v_type: ColumnType) -> Any:
         if v_type is ColumnType.NUMBER:
-            res = float(value)
+            try:
+                res = float(value)
+            except:
+                res = math.nan
             return math.inf if math.isnan(res) else res
         elif v_type is ColumnType.STRING:
             return value
         elif v_type is ColumnType.TIME:
-            return datetime.datetime.strptime(value, self.time_fmt)
+            try:
+                res = datetime.datetime.strptime(value, self.time_fmt)
+            except:
+                res = datetime.datetime.max
+            return res
         else:
             raise NotImplementedError
 
