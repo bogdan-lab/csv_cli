@@ -286,7 +286,7 @@ def test_sort_according_to_several_columns(tmp_path):
 
 
 def test_check_arguments():
-    '''If no types were passed we want to automatically assume 
+    '''If no types were passed we want to automatically assume
     that all column types are numeric'''
     args = Namespace()
     args.c_index = [1]
@@ -428,3 +428,77 @@ def test_sort_by_string_with_empty_strings(tmp_path):
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r3, r5, r2, r1, r4))
+
+
+def test_sort_single_number_column(tmp_path):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    values = (5, 6, 1, 18, 25)
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join(str(el) for el in values))
+
+    args = Namespace()
+    args.delimiter = ","
+    args.files = [fpath]
+    args.no_header = True
+    args.c_name = None
+    args.c_index = [0]
+    args.c_type = ["number"]
+    args.inplace = True
+    args.reverse = False
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+
+    assert data == '\n'.join((str(el) for el in sorted(values)))
+
+
+def test_sort_single_string_column(tmp_path):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    values = ("one", "two", "abcd", "elleven", "buiding")
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join(values))
+
+    args = Namespace()
+    args.delimiter = "DELIMITER"
+    args.files = [fpath]
+    args.no_header = True
+    args.c_name = None
+    args.c_index = [0]
+    args.c_type = ["string"]
+    args.inplace = True
+    args.reverse = True
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+
+    assert data == '\n'.join(reversed(sorted(values)))
+
+
+def test_sort_single_time_column(tmp_path):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    values = ("HEADER", "2001-12-15", "1990-03-05", "2010-11-01", "1980-01-01")
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join(values))
+
+    args = Namespace()
+    args.delimiter = "DELIMITER"
+    args.files = [fpath]
+    args.no_header = False
+    args.c_name = None
+    args.c_index = [0]
+    args.c_type = ["string"]
+    args.inplace = True
+    args.reverse = False
+    args.time_fmt = "%Y-%m-%d"
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+
+    expected = ("HEADER", "1980-01-01", "1990-03-05",
+                "2001-12-15", "2010-11-01")
+    assert data == '\n'.join(expected)
