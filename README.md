@@ -9,6 +9,7 @@ Currently utility supports the following operations:
 ## Sorting utility
 
 One can sort table content using the `sort` sub-command of the utility.
+The utility sorts the table content in a stable way.
 Here are several examples of such sorting.
 
 ### Sort according to a single column
@@ -82,3 +83,34 @@ Date;String;Int;Double
 
 ### Sort according to numeric column with NaN values
 
+If some values in the column according to which we are trying to sort the table rows is not convertible to the requested type it will be pushed to the bottom of the sorted table in the stable way.
+The same will happen with the NaN values in the numeric column according to which table is being sorted.
+For example, let us sort `test.csv` content by column 0.
+`test.csv` content:
+```
+5; a
+-; b
+; d
+0; v
+nan; and
+definetely not a number; num
+```
+The command:
+```
+python3 table.py sort -d ";" --no_header -ci 0 -f test.csv
+```
+Where,
+- `--no_header` indicates that table does not have any header
+- `-ci` shortcut argument name for column index
+- we do not set column type explicitly since by default it will be `number`
+
+The output of the command will be:
+```
+0; v
+5; a
+-; b
+; d
+nan; and
+definetely not a number; num
+```
+Note that relative order of rows with not convertible values is preserved.
