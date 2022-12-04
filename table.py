@@ -164,13 +164,13 @@ def setup_parser(parser):
     sort_parser = subparsers.add_parser("sort", parents=[parent_parser],
                                         help="allows to sort rows according to data in certain columns",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    sort_parser.add_argument("-cn", "--c_name", nargs="+", action="store",
+    sort_parser.add_argument("-cn", "--c_name", action="append",
                              default=None, type=str,
                              help="Column name according to which we want to sort data")
-    sort_parser.add_argument("-ci", "--c_index", nargs="*", action="store", type=int,
+    sort_parser.add_argument("-ci", "--c_index", action="append", type=int,
                              default=None,
                              help="Column index according to which we want to sort data, starts from 0.")
-    sort_parser.add_argument("-as", "--c_type", nargs="+", action="store",
+    sort_parser.add_argument("-as", "--c_type", action="append",
                              default=None,
                              choices=[el.value for el in ColumnType],
                              help="Sets type of the values in the chosen column. "
@@ -180,7 +180,7 @@ def setup_parser(parser):
     sort_parser.add_argument("-i", "--inplace", action="store_true",
                              help="If set sorting will be performed inplace")
     sort_parser.add_argument("-r", "--reverse", action="store_true",
-                             help="If set sorting order will be reversed - the first element will be the smallest one.")
+                             help="If set sorting order will be reversed - the first element will be the largest one.")
     sort_parser.set_defaults(callback=callback_sort)
 
 

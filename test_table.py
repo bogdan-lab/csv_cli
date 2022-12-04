@@ -502,3 +502,32 @@ def test_sort_single_time_column(tmp_path):
     expected = ("HEADER", "1980-01-01", "1990-03-05",
                 "2001-12-15", "2010-11-01")
     assert data == '\n'.join(expected)
+
+
+def test_sort_stability_when_multiple_sort(tmp_path):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    header = "Date;String;Int;Double"
+    r1 = "2010-01-04;two;1;5.0"
+    r2 = "2011-05-23;one;2;4.5"
+    r3 = "2008-03-12;two;-14;3.7"
+    r4 = "2016-12-07;one;-4;0.1"
+
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((header, r1, r2, r3, r4)))
+
+    args = Namespace()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.no_header = False
+    args.c_name = ["String", "Int"]
+    args.c_index = None
+    args.c_type = ["string", "number"]
+    args.inplace = True
+    args.reverse = True
+    args.time_fmt = "%Y-%m-%d"
+    table.callback_sort(args)
+    with open(fpath, 'r') as fin:
+        data = fin.read()
+
+    assert data == '\n'.join((header, r1, r3, r2, r4))
