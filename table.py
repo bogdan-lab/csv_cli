@@ -36,6 +36,7 @@ def convert_to_text(file_data: FileContent) -> str:
 class RowSorter:
     '''Defines the comparator for sorting rows in the file according to the
     arguments passed by user.'''
+
     def __init__(self, col_indexes: List[int], col_types: List[str],
                  delimiter: str, time_fmt: str) -> None:
         self.col_indexes = col_indexes
@@ -150,10 +151,10 @@ def setup_parser(parser):
     sort_parser = subparsers.add_parser("sort", parents=[parent_parser],
                                         help="allows to sort rows according to data in certain columns",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    sort_parser.add_argument("--c_name", nargs="+", action="store",
+    sort_parser.add_argument("-cn", "--c_name", nargs="+", action="store",
                              default=None, type=str,
                              help="Column name according to which we want to sort data")
-    sort_parser.add_argument("--c_index", nargs="*", action="store", type=int,
+    sort_parser.add_argument("-ci", "--c_index", nargs="*", action="store", type=int,
                              default=None,
                              help="Column index according to which we want to sort data, starts from 0.")
     sort_parser.add_argument("-as", "--c_type", nargs="+", action="store",
