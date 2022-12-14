@@ -13,6 +13,11 @@ class ColumnType(Enum):
     TIME = "time"
 
 
+class SelectAction(Enum):
+    SHOW = "show"
+    DELETE = "delete"
+
+
 class FileContent(NamedTuple):
     header: Optional[str]
     content: Tuple[str]
@@ -149,6 +154,67 @@ def callback_sort(args):
                              need_to_mark_filename=len(args.files) > 1)
 
 
+def check_arguments_select(args) -> None:
+    '''Does some early basic checks if the user input is valid.
+    If it is not an exception will be raised'''
+    if args.c_index is None and args.c_name is None:
+        raise ValueError("Column must be specified by name or index!")
+    if args.c_index is not None and args.c_name is not None:
+        raise ValueError("Please define column by index OR by name!")
+    if args.c_name is not None and args.no_header:
+        raise ValueError(
+            "You cannot select column by name if there is no header")
+    if SelectAction(args.action) is SelectAction.SHOW and args.inplace:
+        raise ValueError("You cannot show columns inplace!")
+
+
+def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
+    '''Filters the given row in the way, that only the given column indexes are left in it.
+       Columns in the row are defined by delimiter.
+       Note that the result will be still string with the same delimiter but
+       it will contain only the chosen columns
+    '''
+    l = row.split(delimiter)
+    return delimiter.join(l[i] for i in col_indexes)
+
+
+def apply_select_show(file_data: FileContent, col_indexes: List[int],
+                      delimiter: str) -> FileContent:
+    '''Forms new FileContent object which containes only selected column indexes'''
+    new_header = None
+    if file_data.header:
+        new_header = select_from_row(file_data.header, delimiter, col_indexes)
+    return FileContent(new_header,
+                       tuple(select_from_row(row, delimiter, col_indexes) for row in file_data.content))
+
+
+def apply_select_action(file_data: FileContent, col_indexes: List[int],
+                        delimiter: str, action: SelectAction) -> FileContent:
+    '''Dispatches an action and calls the corresponding callback'''
+    if action is SelectAction.SHOW:
+        return apply_select_show(file_data, col_indexes, delimiter)
+    elif action is SelectAction.DELETE:
+        raise NotImplementedError
+    raise NotImplementedError
+
+
+def callback_select(args):
+    '''Performes columns selection from file according the the given arguments'''
+    check_arguments_select(args)
+    for file in args.files:
+        file_data = read_file(file, not args.no_header)
+        col_index = get_col_indexes(args.c_index, file_data.header,
+                                    args.c_name, args.delimiter)
+        file_data = apply_select_action(
+            file_data, col_index, args.delimiter, SelectAction(args.action))
+        if args.inplace:
+            with open(file, 'w') as fout:
+                fout.write(convert_to_text(file_data))
+        else:
+            print_to_std_out(convert_to_text(file_data), file,
+                             need_to_mark_filename=len(args.files) > 1)
+
+
 def setup_parser(parser):
     '''Declares CLI parameters of the script'''
     subparsers = parser.add_subparsers(title="Chose operation to perform")
@@ -160,16 +226,18 @@ def setup_parser(parser):
                                help="Files with table data which are needed to be sorted")
     parent_parser.add_argument("--no_header", action="store_true",
                                help="If set table will be considered as the one without header.")
+    parent_parser.add_argument("-cn", "--c_name", action="append",
+                               default=None, type=str,
+                               help="Column name according to which we want to sort data")
+    parent_parser.add_argument("-ci", "--c_index", action="append", type=int,
+                               default=None,
+                               help="Column index according to which we want to sort data, starts from 0.")
+    parent_parser.add_argument("-i", "--inplace", action="store_true",
+                               help="If set sorting will be performed inplace")
 
     sort_parser = subparsers.add_parser("sort", parents=[parent_parser],
-                                        help="allows to sort rows according to data in certain columns",
+                                        help="Allows to sort rows according to data in certain columns",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    sort_parser.add_argument("-cn", "--c_name", action="append",
-                             default=None, type=str,
-                             help="Column name according to which we want to sort data")
-    sort_parser.add_argument("-ci", "--c_index", action="append", type=int,
-                             default=None,
-                             help="Column index according to which we want to sort data, starts from 0.")
     sort_parser.add_argument("-as", "--c_type", action="append",
                              default=None,
                              choices=[el.value for el in ColumnType],
@@ -177,11 +245,17 @@ def setup_parser(parser):
                              "If nothing is set all column values will be interpreted as numbers")
     sort_parser.add_argument("-t_fmt", "--time_fmt", action="store", default=DEFAULT_TIME_FORMAT,
                              help="time string format which will be used in order to parse time values")
-    sort_parser.add_argument("-i", "--inplace", action="store_true",
-                             help="If set sorting will be performed inplace")
     sort_parser.add_argument("-r", "--reverse", action="store_true",
                              help="If set sorting order will be reversed - the first element will be the largest one.")
     sort_parser.set_defaults(callback=callback_sort)
+
+    select_parser = subparsers.add_parser("select", parents=[parent_parser],
+                                          help="Allows to show values in selected columns only",
+                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    select_parser.add_argument("-a", "--action", action="store", default=SelectAction.SHOW.value,
+                               choices=[el.value for el in SelectAction],
+                               help="Action which will be applied to the selected values")
+    select_parser.set_defaults(callback=callback_select)
 
 
 def main():

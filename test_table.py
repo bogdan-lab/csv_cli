@@ -531,3 +531,178 @@ def test_sort_stability_when_multiple_sort(tmp_path):
         data = fin.read()
 
     assert data == '\n'.join((header, r1, r3, r2, r4))
+
+
+def test_select_from_row():
+    assert table.select_from_row("1;2;3;4;5", ";", [0, 2, 4]) == "1;3;5"
+    assert table.select_from_row(
+        "1;2;3;4;5", ";", [0, 1, 2, 3, 4]) == "1;2;3;4;5"
+    assert table.select_from_row("1;2;3;4;5", ";", [1, 3]) == "2;4"
+    assert table.select_from_row("1;2;3;4;5", ";", [1]) == "2"
+    assert table.select_from_row("1;2;3;4;5", ",", [0]) == "1;2;3;4;5"
+    assert table.select_from_row("1,2,3,4,5", ",", [4]) == "5"
+    assert table.select_from_row("onetwoonethree", "one", [
+                                 1, 2]) == "twoonethree"
+    assert table.select_from_row("1;2;3;4;5", ";", []) == ""
+
+
+def test_select_single_column_with_header(tmp_path, capsys):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    header = "Date;String;Int;Double"
+    r1 = "2010-01-01;one;1;1.3"
+    r2 = "2010-07-02;two;2;2.6"
+    r3 = "2010-06-03;three;3;3.9"
+    r4 = "2010-11-03;four;4;5.9"
+
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((header, r1, r2, r3, r4)))
+
+    args = Namespace()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.no_header = False
+    args.c_name = ["Date"]
+    args.c_index = None
+    args.inplace = False
+    args.action = table.SelectAction.SHOW.value
+
+    table.callback_select(args)
+
+    out = capsys.readouterr().out
+
+    exp_header = "Date"
+    exp_r1 = "2010-01-01"
+    exp_r2 = "2010-07-02"
+    exp_r3 = "2010-06-03"
+    exp_r4 = "2010-11-03"
+    # in captured data we have a new line at the end
+    assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
+
+
+def test_select_single_column_no_header(tmp_path, capsys):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    r1 = "2010-01-01|one|1|1.3"
+    r2 = "2010-07-02|two|2|2.6"
+    r3 = "2010-06-03|three|3|3.9"
+    r4 = "2010-11-03|four|4|5.9"
+
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((r1, r2, r3, r4)))
+
+    args = Namespace()
+    args.delimiter = "|"
+    args.files = [fpath]
+    args.no_header = False
+    args.c_name = None
+    args.c_index = [3]
+    args.inplace = False
+    args.action = table.SelectAction.SHOW.value
+
+    table.callback_select(args)
+
+    out = capsys.readouterr().out
+
+    exp_r1 = "1.3"
+    exp_r2 = "2.6"
+    exp_r3 = "3.9"
+    exp_r4 = "5.9"
+    # in captured data we have a new line at the end
+    assert out[:-1] == '\n'.join((exp_r1, exp_r2, exp_r3, exp_r4))
+
+
+def test_select_all_columns_when_none_is_given(tmp_path, capsys):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    r1 = "2010-01-01;one;1;1.3"
+    r2 = "2010-07-02;two;2;2.6"
+    r3 = "2010-06-03;three;3;3.9"
+    r4 = "2010-11-03;four;4;5.9"
+
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((r1, r2, r3, r4)))
+
+    args = Namespace()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.no_header = False
+    args.c_name = None
+    args.c_index = None
+    args.inplace = False
+    args.action = table.SelectAction.SHOW.value
+
+    table.callback_select(args)
+
+    out = capsys.readouterr().out
+
+    # in captured data we have a new line at the end
+    assert out[:-1] == '\n'.join((r1, r2, r3, r4))
+
+
+def test_select_few_columns(tmp_path, capsys):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    header = "Date;String;Int;Double"
+    r1 = "2010-01-01;one;1;1.3"
+    r2 = "2010-07-02;two;2;2.6"
+    r3 = "2010-06-03;three;3;3.9"
+    r4 = "2010-11-03;four;4;5.9"
+
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((header, r1, r2, r3, r4)))
+
+    args = Namespace()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.no_header = False
+    args.c_name = ["Date", "Int"]
+    args.c_index = None
+    args.inplace = False
+    args.action = table.SelectAction.SHOW.value
+
+    table.callback_select(args)
+
+    out = capsys.readouterr().out
+
+    exp_header = "Date;Int"
+    exp_r1 = "2010-01-01;1"
+    exp_r2 = "2010-07-02;2"
+    exp_r3 = "2010-06-03;3"
+    exp_r4 = "2010-11-03;4"
+    # in captured data we have a new line at the end
+    assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
+
+
+def test_select_few_columns_without_modifying_spaces(tmp_path, capsys):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    header = "Date;String;Int;Double"
+    r1 = "   2010-01-01;  one   ;1;1.3"
+    r2 = "  2010-07-02;\t\ttwo ;2 ;2.6"
+    r3 = " 2010-06-03;    three;3  ;3.9"
+    r4 = "2010-11-03;four     ;4   ;5.9"
+
+    with open(fpath, 'w') as fout:
+        fout.write('\n'.join((header, r1, r2, r3, r4)))
+
+    args = Namespace()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.no_header = False
+    args.c_name = None
+    args.c_index = [0, 1, 2]
+    args.inplace = False
+    args.action = table.SelectAction.SHOW.value
+
+    table.callback_select(args)
+
+    out = capsys.readouterr().out
+
+    exp_header = "Date;String;Int"
+    exp_r1 = "   2010-01-01;  one   ;1"
+    exp_r2 = "  2010-07-02;\t\ttwo ;2 "
+    exp_r3 = " 2010-06-03;    three;3  "
+    exp_r4 = "2010-11-03;four     ;4   "
+    # in captured data we have a new line at the end
+    assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
