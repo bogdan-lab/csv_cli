@@ -157,8 +157,10 @@ def callback_sort(args):
 def check_arguments_select(args) -> None:
     '''Does some early basic checks if the user input is valid.
     If it is not an exception will be raised'''
-    if args.c_index is None and args.c_name is None:
-        raise ValueError("Column must be specified by name or index!")
+    action = SelectAction(args.action)
+    if args.c_index is None and args.c_name is None and action is not SelectAction.SHOW:
+        raise ValueError(
+            f"You have to select columns on which to perform operation {args.action}")
     if args.c_index is not None and args.c_name is not None:
         raise ValueError("Please define column by index OR by name!")
     if args.c_name is not None and args.no_header:
@@ -198,13 +200,24 @@ def apply_select_action(file_data: FileContent, col_indexes: List[int],
     raise NotImplementedError
 
 
+def get_column_count(fc: FileContent, delimiter: str) -> int:
+    if fc.header is not None:
+        return fc.header.count(delimiter) + 1
+    if len(fc.content) > 0:
+        return fc.content[0].count(delimiter) + 1
+    return 1
+
+
 def callback_select(args):
     '''Performes columns selection from file according the the given arguments'''
     check_arguments_select(args)
+    no_columns_set = args.c_index is None and args.c_name is None
     for file in args.files:
         file_data = read_file(file, not args.no_header)
-        col_index = get_col_indexes(args.c_index, file_data.header,
-                                    args.c_name, args.delimiter)
+        col_index = list(range(0, get_column_count(file_data, args.delimiter)))
+        if not no_columns_set:
+            col_index = get_col_indexes(args.c_index, file_data.header,
+                                        args.c_name, args.delimiter)
         file_data = apply_select_action(
             file_data, col_index, args.delimiter, SelectAction(args.action))
         if args.inplace:

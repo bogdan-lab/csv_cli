@@ -706,3 +706,69 @@ def test_select_few_columns_without_modifying_spaces(tmp_path, capsys):
     exp_r4 = "2010-11-03;four     ;4   "
     # in captured data we have a new line at the end
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
+
+
+def test_select_from_empty_file_all(tmp_path, capsys):
+    fpath = tmp_path/"test.csv"
+    fpath.touch()
+
+    args = Namespace()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.no_header = True
+    args.c_name = None
+    args.c_index = None
+    args.inplace = False
+    args.action = table.SelectAction.SHOW.value
+
+    table.callback_select(args)
+
+    out = capsys.readouterr().out
+
+    assert out == "\n"
+
+
+def test_select_from_file_with_header_only(tmp_path, capsys):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+
+    header = "one,two,three,four"
+
+    with open(fpath, 'w') as fout:
+        fout.write(header)
+
+    args = Namespace()
+    args.delimiter = ","
+    args.files = [fpath]
+    args.no_header = False
+    args.c_name = None
+    args.c_index = [0, 2]
+    args.inplace = False
+    args.action = table.SelectAction.SHOW.value
+
+    table.callback_select(args)
+
+    out = capsys.readouterr().out
+    assert out[:-1] == "one,three"
+
+
+def test_select_from_single_row_no_header(tmp_path, capsys):
+    fpath = tmp_path / "test.csv"
+    fpath.touch()
+    row = "one two three four"
+    with open(fpath, 'w') as fout:
+        fout.write(row)
+
+    args = Namespace()
+    args.delimiter = " "
+    args.files = [fpath]
+    args.no_header = True
+    args.c_name = None
+    args.c_index = [2]
+    args.inplace = False
+    args.action = table.SelectAction.SHOW.value
+
+    table.callback_select(args)
+    out = capsys.readouterr().out
+
+    assert out[:-1] == "three"
