@@ -1,6 +1,17 @@
 import table
 from argparse import Namespace
 import datetime
+from pathlib import Path
+from typing import Iterable
+
+
+def create_file(file_path: Path, content: Iterable) -> Path:
+    '''Creates file in file_path, fills it iwth a content
+    and returns the path to the filled file'''
+    file_path.touch()
+    with open(file_path, 'w') as fout:
+        fout.write('\n'.join(content))
+    return file_path
 
 
 def test_get_col_index():
@@ -87,11 +98,9 @@ def test_sort_empty_file(tmp_path):
 
 
 def test_header_only_file(tmp_path):
-    fpath = tmp_path / "empty.csv"
-    fpath.touch()
     header = "Header1,Header2,Header3"
-    with open(fpath, 'w') as fout:
-        fout.write(header)
+    fpath = create_file(tmp_path/"empty.csv", (header,))
+
     args = Namespace()
     args.delimiter = ","
     args.files = [fpath]
@@ -109,15 +118,13 @@ def test_header_only_file(tmp_path):
 
 
 def test_sort_file_by_one_column_1(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     r1 = "1;2;3"
     r2 = "2;3;4"
     r3 = "3;4;5"
     r4 = "4;5;6"
     r5 = "5;6;7"
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((r4, r5, r3, r1, r2)))
+    fpath = create_file(tmp_path / "test.csv", (r4, r5, r3, r1, r2))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -135,16 +142,14 @@ def test_sort_file_by_one_column_1(tmp_path):
 
 
 def test_sort_file_by_one_column_2(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = 'one;two;three'
     r1 = "1;2;a"
     r2 = "2;3;b"
     r3 = "3;4;c"
     r4 = "4;5;d"
     r5 = "5;6;e"
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r4, r5, r3, r1, r2)))
+    fpath = create_file(tmp_path / "test.csv", (header, r4, r5, r3, r1, r2))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -163,16 +168,14 @@ def test_sort_file_by_one_column_2(tmp_path):
 
 def test_sort_file_by_one_column_3(tmp_path):
     '''Sorting by time column'''
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = 'one;two;three'
     r1 = "2010-01-02 13:45:23;2;a"
     r2 = "1993-11-02 23:05:17;3;b"
     r3 = "2015-07-23 08:01:00;4;c"
     r4 = "2001-05-11 00:00:23;5;d"
     r5 = "2011-04-29 17:01:23;6;e"
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r4, r5, r3, r1, r2)))
+    fpath = create_file(tmp_path / "test.csv", (header, r4, r5, r3, r1, r2))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -191,16 +194,14 @@ def test_sort_file_by_one_column_3(tmp_path):
 
 def test_sort_file_by_one_column_4(tmp_path):
     '''Sorting by time column with different format'''
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = 'one;two;three'
     r1 = "2010_01_02;2;a"
     r2 = "1993_11_02;3;b"
     r3 = "2015_07_23;4;c"
     r4 = "2001_05_11;5;d"
     r5 = "2011_04_29;6;e"
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r4, r5, r3, r1, r2)))
+    fpath = create_file(tmp_path / "test.csv", (header, r4, r5, r3, r1, r2))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -219,8 +220,6 @@ def test_sort_file_by_one_column_4(tmp_path):
 
 def test_sort_file_without_modification(tmp_path):
     '''Order of rows should be the only thing that is modified'''
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = '    one;   two   ;three  \t '
     r1 = "   1;  1  ;1   "
     r2 = "   2;  2  ;2   "
@@ -228,8 +227,9 @@ def test_sort_file_without_modification(tmp_path):
     r4 = "   4;  4  ;4   "
     r5 = "   5;  5  ;5   "
     r6 = "   6;  6  ;6   "
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r1, r2, r3, r4, r5, r6)))
+    fpath = create_file(tmp_path / "test.csv",
+                        (header, r1, r2, r3, r4, r5, r6))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -259,16 +259,14 @@ def test_sort_file_without_modification(tmp_path):
 
 
 def test_sort_according_to_several_columns(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = 'one;two;three'
     r1 = "1;2;a"
     r2 = "1;3;b"
     r3 = "3;4;c"
     r4 = "2;5;d"
     r5 = "2;6;e"
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r4, r5, r3, r1, r2)))
+    fpath = create_file(tmp_path / "test.csv", (header, r4, r5, r3, r1, r2))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -318,15 +316,13 @@ def test_check_arguments():
 
 
 def test_sort_according_to_the_column_with_nan(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     r1 = "4.5;one"
     r2 = "nan;first"
     r3 = "-1.0;two"
     r4 = "7.9;big"
     r5 = "nan;last"
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((r1, r2, r3, r4, r5)))
+    fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -346,16 +342,14 @@ def test_sort_according_to_the_column_with_nan(tmp_path):
 
 
 def test_sort_when_convertion_fails_1(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     r1 = "5; a"
     r2 = "-; b"
     r3 = "; d"
     r4 = "0; v"
     r5 = "nan; and"
     r6 = "definetely not a number; num"
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((r1, r2, r3, r4, r5, r6)))
+    fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5, r6))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -375,16 +369,14 @@ def test_sort_when_convertion_fails_1(tmp_path):
 
 
 def test_sort_when_convertion_fails_2(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     r1 = "2010-01-01; a"
     r2 = "-; b"
     r3 = "; d"
     r4 = "2008-09-12; v"
     r5 = "nan; and"
     r6 = "definetely not a number; num"
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((r1, r2, r3, r4, r5, r6)))
+    fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5, r6))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -404,16 +396,14 @@ def test_sort_when_convertion_fails_2(tmp_path):
 
 
 def test_sort_by_string_with_empty_strings(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = 'one;two;three'
     r1 = "1;2;b"
     r2 = "1;3;-"
     r3 = "3;4;"
     r4 = "2;5;d"
     r5 = "2;6;"
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r1, r2, r3, r4, r5)))
+    fpath = create_file(tmp_path/"test.csv", (header, r1, r2, r3, r4, r5))
+
     args = Namespace()
     args.delimiter = ";"
     args.files = [fpath]
@@ -431,11 +421,8 @@ def test_sort_by_string_with_empty_strings(tmp_path):
 
 
 def test_sort_single_number_column(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     values = (5, 6, 1, 18, 25)
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join(str(el) for el in values))
+    fpath = create_file(tmp_path / "test.csv", (str(el) for el in values))
 
     args = Namespace()
     args.delimiter = ","
@@ -455,11 +442,8 @@ def test_sort_single_number_column(tmp_path):
 
 
 def test_sort_single_string_column(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     values = ("one", "two", "abcd", "elleven", "buiding")
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join(values))
+    fpath = create_file(tmp_path / "test.csv", values)
 
     args = Namespace()
     args.delimiter = "DELIMITER"
@@ -479,11 +463,8 @@ def test_sort_single_string_column(tmp_path):
 
 
 def test_sort_single_time_column(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     values = ("HEADER", "2001-12-15", "1990-03-05", "2010-11-01", "1980-01-01")
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join(values))
+    fpath = create_file(tmp_path / "test.csv", values)
 
     args = Namespace()
     args.delimiter = "DELIMITER"
@@ -505,16 +486,12 @@ def test_sort_single_time_column(tmp_path):
 
 
 def test_sort_stability_when_multiple_sort(tmp_path):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = "Date;String;Int;Double"
     r1 = "2010-01-04;two;1;5.0"
     r2 = "2011-05-23;one;2;4.5"
     r3 = "2008-03-12;two;-14;3.7"
     r4 = "2016-12-07;one;-4;0.1"
-
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r1, r2, r3, r4)))
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
     args = Namespace()
     args.delimiter = ";"
@@ -547,16 +524,12 @@ def test_select_from_row():
 
 
 def test_select_single_column_with_header(tmp_path, capsys):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = "Date;String;Int;Double"
     r1 = "2010-01-01;one;1;1.3"
     r2 = "2010-07-02;two;2;2.6"
     r3 = "2010-06-03;three;3;3.9"
     r4 = "2010-11-03;four;4;5.9"
-
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r1, r2, r3, r4)))
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
     args = Namespace()
     args.delimiter = ";"
@@ -581,15 +554,11 @@ def test_select_single_column_with_header(tmp_path, capsys):
 
 
 def test_select_single_column_no_header(tmp_path, capsys):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     r1 = "2010-01-01|one|1|1.3"
     r2 = "2010-07-02|two|2|2.6"
     r3 = "2010-06-03|three|3|3.9"
     r4 = "2010-11-03|four|4|5.9"
-
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((r1, r2, r3, r4)))
+    fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4))
 
     args = Namespace()
     args.delimiter = "|"
@@ -613,15 +582,11 @@ def test_select_single_column_no_header(tmp_path, capsys):
 
 
 def test_select_all_columns_when_none_is_given(tmp_path, capsys):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     r1 = "2010-01-01;one;1;1.3"
     r2 = "2010-07-02;two;2;2.6"
     r3 = "2010-06-03;three;3;3.9"
     r4 = "2010-11-03;four;4;5.9"
-
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((r1, r2, r3, r4)))
+    fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4))
 
     args = Namespace()
     args.delimiter = ";"
@@ -641,16 +606,12 @@ def test_select_all_columns_when_none_is_given(tmp_path, capsys):
 
 
 def test_select_few_columns(tmp_path, capsys):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = "Date;String;Int;Double"
     r1 = "2010-01-01;one;1;1.3"
     r2 = "2010-07-02;two;2;2.6"
     r3 = "2010-06-03;three;3;3.9"
     r4 = "2010-11-03;four;4;5.9"
-
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r1, r2, r3, r4)))
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
     args = Namespace()
     args.delimiter = ";"
@@ -675,16 +636,12 @@ def test_select_few_columns(tmp_path, capsys):
 
 
 def test_select_few_columns_without_modifying_spaces(tmp_path, capsys):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     header = "Date;String;Int;Double"
     r1 = "   2010-01-01;  one   ;1;1.3"
     r2 = "  2010-07-02;\t\ttwo ;2 ;2.6"
     r3 = " 2010-06-03;    three;3  ;3.9"
     r4 = "2010-11-03;four     ;4   ;5.9"
-
-    with open(fpath, 'w') as fout:
-        fout.write('\n'.join((header, r1, r2, r3, r4)))
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
     args = Namespace()
     args.delimiter = ";"
@@ -729,13 +686,8 @@ def test_select_from_empty_file_all(tmp_path, capsys):
 
 
 def test_select_from_file_with_header_only(tmp_path, capsys):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
-
     header = "one,two,three,four"
-
-    with open(fpath, 'w') as fout:
-        fout.write(header)
+    fpath = create_file(tmp_path / "test.csv", (header,))
 
     args = Namespace()
     args.delimiter = ","
@@ -753,11 +705,8 @@ def test_select_from_file_with_header_only(tmp_path, capsys):
 
 
 def test_select_from_single_row_no_header(tmp_path, capsys):
-    fpath = tmp_path / "test.csv"
-    fpath.touch()
     row = "one two three four"
-    with open(fpath, 'w') as fout:
-        fout.write(row)
+    fpath = create_file(tmp_path / "test.csv", (row,))
 
     args = Namespace()
     args.delimiter = " "
