@@ -241,23 +241,27 @@ def setup_parser(parser):
     '''Declares CLI parameters of the script'''
     subparsers = parser.add_subparsers(title="Chose operation to perform")
 
-    parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument("-d", "--delimiter", action="store", type=str, default=DEFAULT_TABLE_DELIMITER,
-                               help="Delimiter, which separates columns in the file")
-    parent_parser.add_argument("-f", "--files", nargs="+", action="store",
-                               help="Files with table data on which we want to perform an operation")
-    parent_parser.add_argument("--no_header", action=DEFAULT_NO_HEADER_ACTION,
-                               help="If set table will be considered as the one without header.")
-    parent_parser.add_argument("-cn", "--c_name", action="append",
-                               default=DEFAULT_COLUMN_NAME_LIST, type=str,
-                               help="Column name on which we want to perform an operation")
-    parent_parser.add_argument("-ci", "--c_index", action="append", type=int,
-                               default=DEFAULT_COLUMN_INDEX_LIST,
-                               help="Column index on which we want to perform an operation, starts from 0.")
-    parent_parser.add_argument("-i", "--inplace", action=DEFAULT_INPLACE_ACTION,
-                               help="If set the operation will be performed inplace")
+    file_params = argparse.ArgumentParser(add_help=False)
+    file_params.add_argument("-d", "--delimiter", action="store", type=str, default=DEFAULT_TABLE_DELIMITER,
+                             help="Delimiter, which separates columns in the file")
+    file_params.add_argument("-f", "--files", nargs="+", action="store",
+                             help="Files with table data on which we want to perform an operation")
+    file_params.add_argument("--no_header", action=DEFAULT_NO_HEADER_ACTION,
+                             help="If set table will be considered as the one without header.")
 
-    sort_parser = subparsers.add_parser("sort", parents=[parent_parser],
+    column_selector = argparse.ArgumentParser(add_help=False)
+    column_selector.add_argument("-cn", "--c_name", action="append",
+                                 default=DEFAULT_COLUMN_NAME_LIST, type=str,
+                                 help="Column name on which we want to perform an operation")
+    column_selector.add_argument("-ci", "--c_index", action="append", type=int,
+                                 default=DEFAULT_COLUMN_INDEX_LIST,
+                                 help="Column index on which we want to perform an operation, starts from 0.")
+
+    inplace_argument = argparse.ArgumentParser(add_help=False)
+    inplace_argument.add_argument("-i", "--inplace", action=DEFAULT_INPLACE_ACTION,
+                                  help="If set the operation will be performed inplace")
+
+    sort_parser = subparsers.add_parser("sort", parents=[file_params, column_selector, inplace_argument],
                                         help="Allows to sort rows according to data in certain columns",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     sort_parser.add_argument("-as", "--c_type", action="append",
@@ -271,7 +275,7 @@ def setup_parser(parser):
                              help="If set sorting order will be reversed - the first element will be the largest one.")
     sort_parser.set_defaults(callback=callback_sort)
 
-    show_parser = subparsers.add_parser("show", parents=[parent_parser],
+    show_parser = subparsers.add_parser("show", parents=[file_params, column_selector],
                                         help="Allows to selectively show table content",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     show_parser.add_argument("--head", action="store", type=int, default=DEFAULT_SHOW_HEAD_NUMBER,

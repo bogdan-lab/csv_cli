@@ -14,18 +14,37 @@ def create_file(file_path: Path, content: Iterable) -> Path:
     return file_path
 
 
-def create_default_parent_args() -> Namespace:
+def create_default_file_params() -> Namespace():
     args = Namespace()
     args.delimiter = table.DEFAULT_TABLE_DELIMITER
     args.no_header = False if table.DEFAULT_NO_HEADER_ACTION == "store_true" else False
+    return args
+
+
+def create_default_column_selector() -> Namespace():
+    args = Namespace()
     args.c_name = table.DEFAULT_COLUMN_NAME_LIST
     args.c_index = table.DEFAULT_COLUMN_INDEX_LIST
+    return args
+
+
+def create_default_inplace_argument() -> Namespace:
+    args = Namespace()
     args.inplace = False if table.DEFAULT_INPLACE_ACTION == "store_true" else False
     return args
 
 
+def merge_args(*seq) -> Namespace:
+    total = {}
+    for val in seq:
+        total.update(vars(val))
+    return Namespace(**total)
+
+
 def create_default_sort_args() -> Namespace:
-    args = create_default_parent_args()
+    args = merge_args(create_default_file_params(),
+                      create_default_column_selector(),
+                      create_default_inplace_argument())
     args.c_type = table.DEFAULT_COLUMN_TYPE_LIST
     args.time_fmt = table.DEFAULT_TIME_FORMAT
     args.reverse = False if table.DEFAULT_SORT_REVERSE_ACTION == "store_true" else False
@@ -33,7 +52,8 @@ def create_default_sort_args() -> Namespace:
 
 
 def create_default_show_args() -> Namespace:
-    args = create_default_parent_args()
+    args = merge_args(create_default_file_params(),
+                      create_default_column_selector())
     args.head = table.DEFAULT_SHOW_HEAD_NUMBER
     args.tail = table.DEFAULT_SHOW_TAIL_NUMBER
     return args
