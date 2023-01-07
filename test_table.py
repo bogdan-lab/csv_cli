@@ -14,6 +14,30 @@ def create_file(file_path: Path, content: Iterable) -> Path:
     return file_path
 
 
+def create_default_parent_args() -> Namespace:
+    args = Namespace()
+    args.delimiter = table.DEFAULT_TABLE_DELIMITER
+    args.no_header = False if table.DEFAULT_NO_HEADER_ACTION == "store_true" else False
+    args.c_name = table.DEFAULT_COLUMN_NAME_LIST
+    args.c_index = table.DEFAULT_COLUMN_INDEX_LIST
+    args.inplace = False if table.DEFAULT_INPLACE_ACTION == "store_true" else False
+    return args
+
+
+def create_default_sort_args() -> Namespace:
+    args = create_default_parent_args()
+    args.c_type = table.DEFAULT_COLUMN_TYPE_LIST
+    args.time_fmt = table.DEFAULT_TIME_FORMAT
+    args.reverse = False if table.DEFAULT_SORT_REVERSE_ACTION == "store_true" else False
+    return args
+
+
+def create_default_select_args() -> Namespace:
+    args = create_default_parent_args()
+    args.action = table.DEFAULT_SELECT_ACTION
+    return args
+
+
 def test_get_col_index():
     header = "One;TwO;THREE"
     assert table.get_col_indexes(None, header, ["TWO"], ";") == [1]
@@ -81,16 +105,13 @@ def test_comparator():
 def test_sort_empty_file(tmp_path):
     fpath = tmp_path / "empty.csv"
     fpath.touch()
-    args = Namespace()
-    args.delimiter = ";"
+
+    args = create_default_sort_args()
     args.files = [fpath]
-    args.no_header = False
-    args.c_name = None
     args.c_index = [0]
     args.c_type = ['string']
     args.inplace = True
-    args.reverse = False
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.readlines()
@@ -101,16 +122,13 @@ def test_header_only_file(tmp_path):
     header = "Header1,Header2,Header3"
     fpath = create_file(tmp_path/"empty.csv", (header,))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ","
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ["Header1"]
-    args.c_index = None
     args.c_type = ['string']
     args.inplace = True
-    args.reverse = False
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -125,16 +143,14 @@ def test_sort_file_by_one_column_1(tmp_path):
     r5 = "5;6;7"
     fpath = create_file(tmp_path / "test.csv", (r4, r5, r3, r1, r2))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
     args.no_header = True
-    args.c_name = None
     args.c_index = [0]
     args.c_type = ['number']
     args.inplace = True
-    args.reverse = False
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -150,16 +166,14 @@ def test_sort_file_by_one_column_2(tmp_path):
     r5 = "5;6;e"
     fpath = create_file(tmp_path / "test.csv", (header, r4, r5, r3, r1, r2))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ['three']
-    args.c_index = None
     args.c_type = ['string']
     args.inplace = True
     args.reverse = True
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -176,16 +190,13 @@ def test_sort_file_by_one_column_3(tmp_path):
     r5 = "2011-04-29 17:01:23;6;e"
     fpath = create_file(tmp_path / "test.csv", (header, r4, r5, r3, r1, r2))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ['one']
-    args.c_index = None
     args.c_type = ['time']
     args.inplace = True
-    args.reverse = False
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -202,16 +213,15 @@ def test_sort_file_by_one_column_4(tmp_path):
     r5 = "2011_04_29;6;e"
     fpath = create_file(tmp_path / "test.csv", (header, r4, r5, r3, r1, r2))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ['one']
-    args.c_index = None
     args.c_type = ['time']
     args.inplace = True
     args.reverse = True
     args.time_fmt = "%Y_%m_%d"
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -230,16 +240,14 @@ def test_sort_file_without_modification(tmp_path):
     fpath = create_file(tmp_path / "test.csv",
                         (header, r1, r2, r3, r4, r5, r6))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ['one']
-    args.c_index = None
     args.c_type = ['number']
     args.inplace = True
-    args.reverse = False
     args.time_fmt = "%Y_%m_%d"
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -267,30 +275,27 @@ def test_sort_according_to_several_columns(tmp_path):
     r5 = "2;6;e"
     fpath = create_file(tmp_path / "test.csv", (header, r4, r5, r3, r1, r2))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ['one', 'three']
-    args.c_index = None
     args.c_type = ['number', 'string']
     args.inplace = True
     args.reverse = True
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r3, r5, r4, r2, r1))
 
 
-def test_check_arguments():
+def test_check_arguments_sort():
     '''If no types were passed we want to automatically assume
     that all column types are numeric'''
-    args = Namespace()
+
+    args = create_default_sort_args()
     args.c_index = [1]
-    args.c_name = None
-    args.c_type = None
-    args.no_header = False
+
     table.check_arguments(args)
     assert len(args.c_type) == len(args.c_index)
     assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)
@@ -323,16 +328,13 @@ def test_sort_according_to_the_column_with_nan(tmp_path):
     r5 = "nan;last"
     fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
     args.no_header = True
     args.c_index = [0]
     args.c_type = ["number"]
-    args.c_name = None
     args.inplace = True
-    args.reverse = False
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
     table.callback_sort(args)
 
     with open(fpath, 'r') as fin:
@@ -350,16 +352,14 @@ def test_sort_when_convertion_fails_1(tmp_path):
     r6 = "definetely not a number; num"
     fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5, r6))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
     args.no_header = True
     args.c_index = [0]
     args.c_type = ["number"]
-    args.c_name = None
     args.inplace = True
-    args.reverse = False
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
 
     with open(fpath, 'r') as fin:
@@ -377,16 +377,15 @@ def test_sort_when_convertion_fails_2(tmp_path):
     r6 = "definetely not a number; num"
     fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5, r6))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
     args.no_header = True
     args.c_index = [0]
     args.c_type = ["time"]
-    args.c_name = None
     args.inplace = True
-    args.reverse = False
     args.time_fmt = "%Y-%m-%d"
+
     table.callback_sort(args)
 
     with open(fpath, 'r') as fin:
@@ -404,16 +403,13 @@ def test_sort_by_string_with_empty_strings(tmp_path):
     r5 = "2;6;"
     fpath = create_file(tmp_path/"test.csv", (header, r1, r2, r3, r4, r5))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ['three']
-    args.c_index = None
     args.c_type = ['string']
     args.inplace = True
-    args.reverse = False
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -424,16 +420,14 @@ def test_sort_single_number_column(tmp_path):
     values = (5, 6, 1, 18, 25)
     fpath = create_file(tmp_path / "test.csv", (str(el) for el in values))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ","
     args.files = [fpath]
     args.no_header = True
-    args.c_name = None
     args.c_index = [0]
     args.c_type = ["number"]
     args.inplace = True
-    args.reverse = False
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -445,16 +439,15 @@ def test_sort_single_string_column(tmp_path):
     values = ("one", "two", "abcd", "elleven", "buiding")
     fpath = create_file(tmp_path / "test.csv", values)
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = "DELIMITER"
     args.files = [fpath]
     args.no_header = True
-    args.c_name = None
     args.c_index = [0]
     args.c_type = ["string"]
     args.inplace = True
     args.reverse = True
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -466,16 +459,14 @@ def test_sort_single_time_column(tmp_path):
     values = ("HEADER", "2001-12-15", "1990-03-05", "2010-11-01", "1980-01-01")
     fpath = create_file(tmp_path / "test.csv", values)
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = "DELIMITER"
     args.files = [fpath]
-    args.no_header = False
-    args.c_name = None
     args.c_index = [0]
     args.c_type = ["string"]
     args.inplace = True
-    args.reverse = False
     args.time_fmt = "%Y-%m-%d"
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -493,16 +484,15 @@ def test_sort_stability_when_multiple_sort(tmp_path):
     r4 = "2016-12-07;one;-4;0.1"
     fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
-    args = Namespace()
+    args = create_default_sort_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ["String", "Int"]
-    args.c_index = None
     args.c_type = ["string", "number"]
     args.inplace = True
     args.reverse = True
     args.time_fmt = "%Y-%m-%d"
+
     table.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -531,14 +521,10 @@ def test_select_single_column_with_header(tmp_path, capsys):
     r4 = "2010-11-03;four;4;5.9"
     fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
-    args = Namespace()
+    args = create_default_select_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ["Date"]
-    args.c_index = None
-    args.inplace = False
-    args.action = table.SelectAction.SHOW.value
 
     table.callback_select(args)
 
@@ -560,14 +546,10 @@ def test_select_single_column_no_header(tmp_path, capsys):
     r4 = "2010-11-03|four|4|5.9"
     fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4))
 
-    args = Namespace()
+    args = create_default_select_args()
     args.delimiter = "|"
     args.files = [fpath]
-    args.no_header = False
-    args.c_name = None
     args.c_index = [3]
-    args.inplace = False
-    args.action = table.SelectAction.SHOW.value
 
     table.callback_select(args)
 
@@ -588,14 +570,9 @@ def test_select_all_columns_when_none_is_given(tmp_path, capsys):
     r4 = "2010-11-03;four;4;5.9"
     fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4))
 
-    args = Namespace()
+    args = create_default_select_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
-    args.c_name = None
-    args.c_index = None
-    args.inplace = False
-    args.action = table.SelectAction.SHOW.value
 
     table.callback_select(args)
 
@@ -613,14 +590,10 @@ def test_select_few_columns(tmp_path, capsys):
     r4 = "2010-11-03;four;4;5.9"
     fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
-    args = Namespace()
+    args = create_default_select_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
     args.c_name = ["Date", "Int"]
-    args.c_index = None
-    args.inplace = False
-    args.action = table.SelectAction.SHOW.value
 
     table.callback_select(args)
 
@@ -643,14 +616,10 @@ def test_select_few_columns_without_modifying_spaces(tmp_path, capsys):
     r4 = "2010-11-03;four     ;4   ;5.9"
     fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
-    args = Namespace()
+    args = create_default_select_args()
     args.delimiter = ";"
     args.files = [fpath]
-    args.no_header = False
-    args.c_name = None
     args.c_index = [0, 1, 2]
-    args.inplace = False
-    args.action = table.SelectAction.SHOW.value
 
     table.callback_select(args)
 
@@ -669,14 +638,10 @@ def test_select_from_empty_file_all(tmp_path, capsys):
     fpath = tmp_path/"test.csv"
     fpath.touch()
 
-    args = Namespace()
+    args = create_default_select_args()
     args.delimiter = ";"
     args.files = [fpath]
     args.no_header = True
-    args.c_name = None
-    args.c_index = None
-    args.inplace = False
-    args.action = table.SelectAction.SHOW.value
 
     table.callback_select(args)
 
@@ -689,14 +654,10 @@ def test_select_from_file_with_header_only(tmp_path, capsys):
     header = "one,two,three,four"
     fpath = create_file(tmp_path / "test.csv", (header,))
 
-    args = Namespace()
+    args = create_default_select_args()
     args.delimiter = ","
     args.files = [fpath]
-    args.no_header = False
-    args.c_name = None
     args.c_index = [0, 2]
-    args.inplace = False
-    args.action = table.SelectAction.SHOW.value
 
     table.callback_select(args)
 
@@ -708,14 +669,11 @@ def test_select_from_single_row_no_header(tmp_path, capsys):
     row = "one two three four"
     fpath = create_file(tmp_path / "test.csv", (row,))
 
-    args = Namespace()
+    args = create_default_select_args()
     args.delimiter = " "
     args.files = [fpath]
     args.no_header = True
-    args.c_name = None
     args.c_index = [2]
-    args.inplace = False
-    args.action = table.SelectAction.SHOW.value
 
     table.callback_select(args)
     out = capsys.readouterr().out
