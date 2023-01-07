@@ -167,6 +167,10 @@ def check_arguments_show(args) -> None:
     if args.c_name is not None and args.no_header:
         raise ValueError(
             "You cannot select column by name if there is no header")
+    if args.head is not None and args.head < 0:
+        raise ValueError("head value cannot be negative")
+    if args.tail is not None and args.tail < 0:
+        raise ValueError("tail value cannot be negative")
 
 
 def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
@@ -179,14 +183,15 @@ def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
     return delimiter.join(l[i] for i in col_indexes)
 
 
-def apply_show(file_data: FileContent, col_indexes: List[int],
+def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List[int],
                delimiter: str) -> FileContent:
     '''Forms new FileContent object which containes only selected column indexes'''
     new_header = None
     if file_data.header:
         new_header = select_from_row(file_data.header, delimiter, col_indexes)
     return FileContent(new_header,
-                       tuple(select_from_row(row, delimiter, col_indexes) for row in file_data.content))
+                       tuple(select_from_row(file_data.content[i], delimiter, col_indexes)
+                             for i in row_indexes))
 
 
 def get_column_count(fc: FileContent, delimiter: str) -> int:
@@ -195,6 +200,23 @@ def get_column_count(fc: FileContent, delimiter: str) -> int:
     if len(fc.content) > 0:
         return fc.content[0].count(delimiter) + 1
     return 1
+
+
+def get_row_indexes(total_row_count: int, head: int, tail: int) -> List[int]:
+    '''This function will return list of row indexes based of head and tail counters.
+       Returned values will be normalized to the size of the table and in case when
+       they should be combined (when we have both head and tail values) function will
+       guarantee that indexes in the returned list will be unique and will not crossect.
+    '''
+    if head is None and tail is None:
+        return list(range(0, total_row_count))
+    res = []
+    if head:
+        res.extend(range(0, min(head, total_row_count)))
+    if tail:
+        curr_max = 0 if len(res) == 0 else res[-1] + 1
+        res.extend(range(max(curr_max, total_row_count - tail), total_row_count))
+    return res
 
 
 def callback_show(args):
@@ -207,7 +229,10 @@ def callback_show(args):
         if not no_columns_set:
             col_index = get_col_indexes(args.c_index, file_data.header,
                                         args.c_name, args.delimiter)
-        file_data = apply_show(file_data, col_index, args.delimiter)
+        row_indexes = get_row_indexes(
+            len(file_data.content), args.head, args.tail)
+        file_data = apply_show(file_data, row_indexes,
+                               col_index, args.delimiter)
         print_to_std_out(convert_to_text(file_data), file,
                          need_to_mark_filename=len(args.files) > 1)
 

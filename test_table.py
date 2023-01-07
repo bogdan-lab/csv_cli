@@ -730,3 +730,257 @@ def test_show_entire_table_with_default_parameters(tmp_path, capsys):
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
+
+
+def test_get_row_indexes():
+    assert table.get_row_indexes(5, None, None) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(5, 0, None) == []
+    assert table.get_row_indexes(5, None, 0) == []
+    assert table.get_row_indexes(5, 0, 0) == []
+    assert table.get_row_indexes(5, 3, None) == [0, 1, 2]
+    assert table.get_row_indexes(5, None, 3) == [2, 3, 4]
+    assert table.get_row_indexes(5, 1, 1) == [0, 4]
+    assert table.get_row_indexes(5, 3, 3) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(5, 30, 30) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(5, 10, None) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(5, None, 50) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(0, None, None) == []
+    assert table.get_row_indexes(0, 5, None) == []
+    assert table.get_row_indexes(0, None, 10) == []
+    assert table.get_row_indexes(0, 25, 10) == []
+
+
+def test_show_table_with_only_head(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+
+    args.head = 0
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == header
+
+    args.head = 1
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1))
+
+    args.head = 2
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2))
+
+    args.head = 20
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
+
+
+def test_show_table_with_only_head_and_columns(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    exp_header = "Int;String"
+    exp_r1 = "1; one"
+    exp_r2 = "3; three"
+    exp_r3 = "5; five"
+    exp_r4 = "4; four"
+    exp_r5 = "2; two"
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ";"
+    args.c_index = [0, 2]
+
+    args.head = 0
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == exp_header
+
+    args.head = 1
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1))
+
+    args.head = 2
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2))
+
+    args.head = 20
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1,
+                                 exp_r2, exp_r3, exp_r4, exp_r5))
+
+
+def test_show_table_with_only_tail(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+
+    args.tail = 0
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == header
+
+    args.tail = 1
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r5))
+
+    args.tail = 2
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r4, r5))
+
+    args.tail = 20
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
+
+
+def test_show_table_with_only_tail_and_columns(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    exp_header = "String;Int"
+    exp_r1 = " one;1"
+    exp_r2 = " three;3"
+    exp_r3 = " five;5"
+    exp_r4 = " four;4"
+    exp_r5 = " two;2"
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ";"
+    args.c_index = [2, 0]
+
+    args.tail = 0
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == exp_header
+
+    args.tail = 1
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r5))
+
+    args.tail = 2
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r4, exp_r5))
+
+    args.tail = 20
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1,
+                                 exp_r2, exp_r3, exp_r4, exp_r5))
+
+
+def test_show_table_with_head_and_tail(tmp_path, capsys):
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.no_header = True
+
+    args.head = 0
+    args.tail = 0
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out == '\n'
+
+    args.head = 1
+    args.tail = 1
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r5))
+
+    args.head = 2
+    args.tail = 2
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r4, r5))
+
+    args.head = 46
+    args.tail = 20
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
+
+
+def test_show_table_with_only_head_and_tail_and_columns(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    exp_header = "Int;String"
+    exp_r1 = "1; one"
+    exp_r2 = "3; three"
+    exp_r3 = "5; five"
+    exp_r4 = "4; four"
+    exp_r5 = "2; two"
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ";"
+    args.c_index = [0, 2]
+
+    args.head = 0
+    args.tail = 0
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == exp_header
+
+    args.head = 1
+    args.tail = 1
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r5))
+
+    args.head = 2
+    args.tail = 2
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r4, exp_r5))
+
+    args.head = 20
+    args.tail = 20
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1,
+                                 exp_r2, exp_r3, exp_r4, exp_r5))
