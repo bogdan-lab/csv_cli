@@ -706,3 +706,27 @@ def test_show_from_single_row_no_header(tmp_path, capsys):
     out = capsys.readouterr().out
 
     assert out[:-1] == "three"
+
+
+def test_show_entire_table_with_default_parameters(tmp_path, capsys):
+    header = "Date;String;Int;Double"
+    r1 = "2020-01-01;Hello;4;23.5"
+    r2 = "2020-02-01;World;3;3.14"
+    r3 = "2020-03-03;Today;10;9.81"
+    r4 = "2020-04-08;Is;1;12.3"
+    r5 = "2020-01-01;Saturday;-56;-5.64"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+
+    table.callback_show(args)
+    out = capsys.readouterr().out
+
+    assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
+    # Same test but without header
+    fpath = create_file(tmp_path/"test.csv", (r1, r2, r3, r4, r5))
+
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
