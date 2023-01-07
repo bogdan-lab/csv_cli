@@ -11,11 +11,6 @@ class ColumnType(Enum):
     TIME = "time"
 
 
-class SelectAction(Enum):
-    SHOW = "show"
-    DELETE = "delete"
-
-
 class FileContent(NamedTuple):
     header: Optional[str]
     content: Tuple[str]
@@ -29,7 +24,8 @@ DEFAULT_COLUMN_INDEX_LIST = None
 DEFAULT_INPLACE_ACTION = "store_true"
 DEFAULT_COLUMN_TYPE_LIST = None
 DEFAULT_SORT_REVERSE_ACTION = "store_true"
-DEFAULT_SELECT_ACTION = SelectAction.SHOW.value
+DEFAULT_SHOW_HEAD_NUMBER = None
+DEFAULT_SHOW_TAIL_NUMBER = None
 
 
 def convert_to_text(file_data: FileContent) -> str:
@@ -163,20 +159,14 @@ def callback_sort(args):
                              need_to_mark_filename=len(args.files) > 1)
 
 
-def check_arguments_select(args) -> None:
+def check_arguments_show(args) -> None:
     '''Does some early basic checks if the user input is valid.
     If it is not an exception will be raised'''
-    action = SelectAction(args.action)
-    if args.c_index is None and args.c_name is None and action is not SelectAction.SHOW:
-        raise ValueError(
-            f"You have to select columns on which to perform operation {args.action}")
     if args.c_index is not None and args.c_name is not None:
         raise ValueError("Please define column by index OR by name!")
     if args.c_name is not None and args.no_header:
         raise ValueError(
             "You cannot select column by name if there is no header")
-    if SelectAction(args.action) is SelectAction.SHOW and args.inplace:
-        raise ValueError("You cannot show columns inplace!")
 
 
 def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
@@ -189,24 +179,14 @@ def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
     return delimiter.join(l[i] for i in col_indexes)
 
 
-def apply_select_show(file_data: FileContent, col_indexes: List[int],
-                      delimiter: str) -> FileContent:
+def apply_show(file_data: FileContent, col_indexes: List[int],
+               delimiter: str) -> FileContent:
     '''Forms new FileContent object which containes only selected column indexes'''
     new_header = None
     if file_data.header:
         new_header = select_from_row(file_data.header, delimiter, col_indexes)
     return FileContent(new_header,
                        tuple(select_from_row(row, delimiter, col_indexes) for row in file_data.content))
-
-
-def apply_select_action(file_data: FileContent, col_indexes: List[int],
-                        delimiter: str, action: SelectAction) -> FileContent:
-    '''Dispatches an action and calls the corresponding callback'''
-    if action is SelectAction.SHOW:
-        return apply_select_show(file_data, col_indexes, delimiter)
-    elif action is SelectAction.DELETE:
-        raise NotImplementedError
-    raise NotImplementedError
 
 
 def get_column_count(fc: FileContent, delimiter: str) -> int:
@@ -217,9 +197,9 @@ def get_column_count(fc: FileContent, delimiter: str) -> int:
     return 1
 
 
-def callback_select(args):
+def callback_show(args):
     '''Performes columns selection from file according the the given arguments'''
-    check_arguments_select(args)
+    check_arguments_show(args)
     no_columns_set = args.c_index is None and args.c_name is None
     for file in args.files:
         file_data = read_file(file, not args.no_header)
@@ -227,14 +207,9 @@ def callback_select(args):
         if not no_columns_set:
             col_index = get_col_indexes(args.c_index, file_data.header,
                                         args.c_name, args.delimiter)
-        file_data = apply_select_action(
-            file_data, col_index, args.delimiter, SelectAction(args.action))
-        if args.inplace:
-            with open(file, 'w') as fout:
-                fout.write(convert_to_text(file_data))
-        else:
-            print_to_std_out(convert_to_text(file_data), file,
-                             need_to_mark_filename=len(args.files) > 1)
+        file_data = apply_show(file_data, col_index, args.delimiter)
+        print_to_std_out(convert_to_text(file_data), file,
+                         need_to_mark_filename=len(args.files) > 1)
 
 
 def setup_parser(parser):
@@ -271,13 +246,15 @@ def setup_parser(parser):
                              help="If set sorting order will be reversed - the first element will be the largest one.")
     sort_parser.set_defaults(callback=callback_sort)
 
-    select_parser = subparsers.add_parser("select", parents=[parent_parser],
-                                          help="Allows to show values in selected columns only",
-                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    select_parser.add_argument("-a", "--action", action="store", default=DEFAULT_SELECT_ACTION,
-                               choices=[el.value for el in SelectAction],
-                               help="Action which will be applied to the selected values")
-    select_parser.set_defaults(callback=callback_select)
+    show_parser = subparsers.add_parser("show", parents=[parent_parser],
+                                        help="Allows to selectively show table content",
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    show_parser.add_argument("--head", action="store", type=int, default=DEFAULT_SHOW_HEAD_NUMBER,
+                             help="Will display given number of top rows in the table")
+    show_parser.add_argument("--tail", action="store", type=int, default=DEFAULT_SHOW_TAIL_NUMBER,
+                             help="Will display given number of bottom rows in the table")
+
+    show_parser.set_defaults(callback=callback_show)
 
 
 def main():

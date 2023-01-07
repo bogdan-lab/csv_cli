@@ -32,9 +32,10 @@ def create_default_sort_args() -> Namespace:
     return args
 
 
-def create_default_select_args() -> Namespace:
+def create_default_show_args() -> Namespace:
     args = create_default_parent_args()
-    args.action = table.DEFAULT_SELECT_ACTION
+    args.head = table.DEFAULT_SHOW_HEAD_NUMBER
+    args.tail = table.DEFAULT_SHOW_TAIL_NUMBER
     return args
 
 
@@ -513,7 +514,7 @@ def test_select_from_row():
     assert table.select_from_row("1;2;3;4;5", ";", []) == ""
 
 
-def test_select_single_column_with_header(tmp_path, capsys):
+def test_show_single_column_with_header(tmp_path, capsys):
     header = "Date;String;Int;Double"
     r1 = "2010-01-01;one;1;1.3"
     r2 = "2010-07-02;two;2;2.6"
@@ -521,12 +522,12 @@ def test_select_single_column_with_header(tmp_path, capsys):
     r4 = "2010-11-03;four;4;5.9"
     fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
-    args = create_default_select_args()
+    args = create_default_show_args()
     args.delimiter = ";"
     args.files = [fpath]
     args.c_name = ["Date"]
 
-    table.callback_select(args)
+    table.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -539,19 +540,19 @@ def test_select_single_column_with_header(tmp_path, capsys):
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
 
 
-def test_select_single_column_no_header(tmp_path, capsys):
+def test_show_single_column_no_header(tmp_path, capsys):
     r1 = "2010-01-01|one|1|1.3"
     r2 = "2010-07-02|two|2|2.6"
     r3 = "2010-06-03|three|3|3.9"
     r4 = "2010-11-03|four|4|5.9"
     fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4))
 
-    args = create_default_select_args()
+    args = create_default_show_args()
     args.delimiter = "|"
     args.files = [fpath]
     args.c_index = [3]
 
-    table.callback_select(args)
+    table.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -563,18 +564,18 @@ def test_select_single_column_no_header(tmp_path, capsys):
     assert out[:-1] == '\n'.join((exp_r1, exp_r2, exp_r3, exp_r4))
 
 
-def test_select_all_columns_when_none_is_given(tmp_path, capsys):
+def test_show_all_columns_when_none_is_given(tmp_path, capsys):
     r1 = "2010-01-01;one;1;1.3"
     r2 = "2010-07-02;two;2;2.6"
     r3 = "2010-06-03;three;3;3.9"
     r4 = "2010-11-03;four;4;5.9"
     fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4))
 
-    args = create_default_select_args()
+    args = create_default_show_args()
     args.delimiter = ";"
     args.files = [fpath]
 
-    table.callback_select(args)
+    table.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -582,7 +583,7 @@ def test_select_all_columns_when_none_is_given(tmp_path, capsys):
     assert out[:-1] == '\n'.join((r1, r2, r3, r4))
 
 
-def test_select_few_columns(tmp_path, capsys):
+def test_show_few_columns(tmp_path, capsys):
     header = "Date;String;Int;Double"
     r1 = "2010-01-01;one;1;1.3"
     r2 = "2010-07-02;two;2;2.6"
@@ -590,12 +591,12 @@ def test_select_few_columns(tmp_path, capsys):
     r4 = "2010-11-03;four;4;5.9"
     fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
-    args = create_default_select_args()
+    args = create_default_show_args()
     args.delimiter = ";"
     args.files = [fpath]
     args.c_name = ["Date", "Int"]
 
-    table.callback_select(args)
+    table.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -608,7 +609,7 @@ def test_select_few_columns(tmp_path, capsys):
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
 
 
-def test_select_few_columns_without_modifying_spaces(tmp_path, capsys):
+def test_show_few_columns_without_modifying_spaces(tmp_path, capsys):
     header = "Date;String;Int;Double"
     r1 = "   2010-01-01;  one   ;1;1.3"
     r2 = "  2010-07-02;\t\ttwo ;2 ;2.6"
@@ -616,12 +617,12 @@ def test_select_few_columns_without_modifying_spaces(tmp_path, capsys):
     r4 = "2010-11-03;four     ;4   ;5.9"
     fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
 
-    args = create_default_select_args()
+    args = create_default_show_args()
     args.delimiter = ";"
     args.files = [fpath]
     args.c_index = [0, 1, 2]
 
-    table.callback_select(args)
+    table.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -634,48 +635,48 @@ def test_select_few_columns_without_modifying_spaces(tmp_path, capsys):
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
 
 
-def test_select_from_empty_file_all(tmp_path, capsys):
+def test_show_from_empty_file_all(tmp_path, capsys):
     fpath = tmp_path/"test.csv"
     fpath.touch()
 
-    args = create_default_select_args()
+    args = create_default_show_args()
     args.delimiter = ";"
     args.files = [fpath]
     args.no_header = True
 
-    table.callback_select(args)
+    table.callback_show(args)
 
     out = capsys.readouterr().out
 
     assert out == "\n"
 
 
-def test_select_from_file_with_header_only(tmp_path, capsys):
+def test_show_from_file_with_header_only(tmp_path, capsys):
     header = "one,two,three,four"
     fpath = create_file(tmp_path / "test.csv", (header,))
 
-    args = create_default_select_args()
+    args = create_default_show_args()
     args.delimiter = ","
     args.files = [fpath]
     args.c_index = [0, 2]
 
-    table.callback_select(args)
+    table.callback_show(args)
 
     out = capsys.readouterr().out
     assert out[:-1] == "one,three"
 
 
-def test_select_from_single_row_no_header(tmp_path, capsys):
+def test_show_from_single_row_no_header(tmp_path, capsys):
     row = "one two three four"
     fpath = create_file(tmp_path / "test.csv", (row,))
 
-    args = create_default_select_args()
+    args = create_default_show_args()
     args.delimiter = " "
     args.files = [fpath]
     args.no_header = True
     args.c_index = [2]
 
-    table.callback_select(args)
+    table.callback_show(args)
     out = capsys.readouterr().out
 
     assert out[:-1] == "three"
