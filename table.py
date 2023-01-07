@@ -4,8 +4,6 @@ import datetime
 from enum import Enum
 import math
 
-DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-
 
 class ColumnType(Enum):
     STRING = "string"
@@ -21,6 +19,17 @@ class SelectAction(Enum):
 class FileContent(NamedTuple):
     header: Optional[str]
     content: Tuple[str]
+
+
+DEFAULT_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+DEFAULT_TABLE_DELIMITER = "\t"
+DEFAULT_NO_HEADER_ACTION = "store_true"
+DEFAULT_COLUMN_NAME_LIST = None
+DEFAULT_COLUMN_INDEX_LIST = None
+DEFAULT_INPLACE_ACTION = "store_true"
+DEFAULT_COLUMN_TYPE_LIST = None
+DEFAULT_SORT_REVERSE_ACTION = "store_true"
+DEFAULT_SELECT_ACTION = SelectAction.SHOW.value
 
 
 def convert_to_text(file_data: FileContent) -> str:
@@ -233,39 +242,39 @@ def setup_parser(parser):
     subparsers = parser.add_subparsers(title="Chose operation to perform")
 
     parent_parser = argparse.ArgumentParser(add_help=False)
-    parent_parser.add_argument("-d", "--delimiter", action="store", type=str, default='\t',
+    parent_parser.add_argument("-d", "--delimiter", action="store", type=str, default=DEFAULT_TABLE_DELIMITER,
                                help="Delimiter, which separates columns in the file")
     parent_parser.add_argument("-f", "--files", nargs="+", action="store",
                                help="Files with table data on which we want to perform an operation")
-    parent_parser.add_argument("--no_header", action="store_true",
+    parent_parser.add_argument("--no_header", action=DEFAULT_NO_HEADER_ACTION,
                                help="If set table will be considered as the one without header.")
     parent_parser.add_argument("-cn", "--c_name", action="append",
-                               default=None, type=str,
+                               default=DEFAULT_COLUMN_NAME_LIST, type=str,
                                help="Column name on which we want to perform an operation")
     parent_parser.add_argument("-ci", "--c_index", action="append", type=int,
-                               default=None,
+                               default=DEFAULT_COLUMN_INDEX_LIST,
                                help="Column index on which we want to perform an operation, starts from 0.")
-    parent_parser.add_argument("-i", "--inplace", action="store_true",
+    parent_parser.add_argument("-i", "--inplace", action=DEFAULT_INPLACE_ACTION,
                                help="If set the operation will be performed inplace")
 
     sort_parser = subparsers.add_parser("sort", parents=[parent_parser],
                                         help="Allows to sort rows according to data in certain columns",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     sort_parser.add_argument("-as", "--c_type", action="append",
-                             default=None,
+                             default=DEFAULT_COLUMN_TYPE_LIST,
                              choices=[el.value for el in ColumnType],
                              help="Sets type of the values in the chosen column. "
                              "If nothing is set all column values will be interpreted as numbers")
     sort_parser.add_argument("-t_fmt", "--time_fmt", action="store", default=DEFAULT_TIME_FORMAT,
                              help="time string format which will be used in order to parse time values")
-    sort_parser.add_argument("-r", "--reverse", action="store_true",
+    sort_parser.add_argument("-r", "--reverse", action=DEFAULT_SORT_REVERSE_ACTION,
                              help="If set sorting order will be reversed - the first element will be the largest one.")
     sort_parser.set_defaults(callback=callback_sort)
 
     select_parser = subparsers.add_parser("select", parents=[parent_parser],
                                           help="Allows to show values in selected columns only",
                                           formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    select_parser.add_argument("-a", "--action", action="store", default=SelectAction.SHOW.value,
+    select_parser.add_argument("-a", "--action", action="store", default=DEFAULT_SELECT_ACTION,
                                choices=[el.value for el in SelectAction],
                                help="Action which will be applied to the selected values")
     select_parser.set_defaults(callback=callback_select)
