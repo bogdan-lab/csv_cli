@@ -236,17 +236,17 @@ def setup_parser(parser):
     parent_parser.add_argument("-d", "--delimiter", action="store", type=str, default='\t',
                                help="Delimiter, which separates columns in the file")
     parent_parser.add_argument("-f", "--files", nargs="+", action="store",
-                               help="Files with table data which are needed to be sorted")
+                               help="Files with table data on which we want to perform an operation")
     parent_parser.add_argument("--no_header", action="store_true",
                                help="If set table will be considered as the one without header.")
     parent_parser.add_argument("-cn", "--c_name", action="append",
                                default=None, type=str,
-                               help="Column name according to which we want to sort data")
+                               help="Column name on which we want to perform an operation")
     parent_parser.add_argument("-ci", "--c_index", action="append", type=int,
                                default=None,
-                               help="Column index according to which we want to sort data, starts from 0.")
+                               help="Column index on which we want to perform an operation, starts from 0.")
     parent_parser.add_argument("-i", "--inplace", action="store_true",
-                               help="If set sorting will be performed inplace")
+                               help="If set the operation will be performed inplace")
 
     sort_parser = subparsers.add_parser("sort", parents=[parent_parser],
                                         help="Allows to sort rows according to data in certain columns",
