@@ -115,20 +115,14 @@ definetely not a number; num
 ```
 Note that relative order of rows with not convertible values is preserved.
 
-## Select utility
-One can filter table content and apply different basic operations on the filtered data.
-This functionality is available in `select` sub-command of the main utility.
-In order to select some data from the table, similarly to the `sort` sub-command, user can provide columns.
-One can also provide parmeters for filtering table rows and the type of action user want to apply to the selected data.
-By default result of the operation will be printed in stdout.
+## Show utility
+This utility allows to selectively display a table content.
+Using this utility one can select different number of rows and columns which will be then printed to the stdout.
+The interface for selecting certain columns from the table is similar to the one in `sort` sub-command.
+If no particular columns were selected for displaying, all columns will be displayed.
+Here are few examples:
 
-Here are some examples of `select` usage.
-
-### Show action
-
-If user specifies only certain columns, only the chosen columns will be printed entirely to stdout.
-Note that if no columns were specified - all of them will be shown.
-For example, let `test.csv` content be the following
+Let `test.csv` content be the following
 ```
 Date;String;Int;Double
 2010-01-04;two;1;5.0
@@ -138,13 +132,12 @@ Date;String;Int;Double
 ```
 The command:
 ```
-python3 table.py select -d ';' -ci 2 -ci 0 -a show -f test.csv
+python3 table.py show -d ';' -ci 2 -ci 0 -a show -f test.csv
 ```
 Where,
 - `-d` defines column delimiter in file
 - `-ci` defines column index in the table, starts from 0. Note that one can pass column names if the header is present in the table.
 - `-f` path to the table file
-- `-a` action which will be applied to the chosen data
 
 The result of the command will be
 ```
@@ -155,3 +148,7 @@ Int;Date
 -4;2016-12-07
 ```
 Note that, the column order in the result is the order in which they were named in the command and not the order in which they are saved in the table.
+
+
+
+
