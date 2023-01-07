@@ -132,7 +132,7 @@ Date;String;Int;Double
 ```
 The command:
 ```
-python3 table.py show -d ';' -ci 2 -ci 0 -a show -f test.csv
+python3 table.py show -d ';' -ci 2 -ci 0 -f test.csv
 ```
 Where,
 - `-d` defines column delimiter in file
@@ -149,6 +149,25 @@ Int;Date
 ```
 Note that, the column order in the result is the order in which they were named in the command and not the order in which they are saved in the table.
 
+Show utility support selection by rows (by itself and combined with column selection).
+There are options `head` and `tail` which allow to display given number of first or last rows in the table.
+Note that these commands can be combined, thus if one sets both `head` and `tail` values, the corresponding union of rows will be displayed.
 
-
-
+For example, Let `test.csv` content be the following
+```
+Date;String;Int;Double
+2010-01-04;two;1;5.0
+2011-05-23;one;2;4.5
+2008-03-12;two;-14;3.7
+2016-12-07;one;-4;0.1
+```
+The command:
+```
+python3 table.py show -d ';' -ci 2 -ci 0 --head 1 --tail 1 -f test.csv
+```
+The result of the command will be
+```
+Int;Date
+1;2010-01-04
+-4;2016-12-07
+```
