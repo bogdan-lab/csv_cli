@@ -609,6 +609,32 @@ def test_show_few_columns(tmp_path, capsys):
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
 
 
+def test_show_few_columns_in_different_order(tmp_path, capsys):
+    header = "Date;String;Int;Double"
+    r1 = "2010-01-01;one;1;1.3"
+    r2 = "2010-07-02;two;2;2.6"
+    r3 = "2010-06-03;three;3;3.9"
+    r4 = "2010-11-03;four;4;5.9"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4))
+
+    args = create_default_show_args()
+    args.delimiter = ";"
+    args.files = [fpath]
+    args.c_name = ["Int", "Date"]
+
+    table.callback_show(args)
+
+    out = capsys.readouterr().out
+
+    exp_header = "Int;Date"
+    exp_r1 = "1;2010-01-01"
+    exp_r2 = "2;2010-07-02"
+    exp_r3 = "3;2010-06-03"
+    exp_r4 = "4;2010-11-03"
+    # in captured data we have a new line at the end
+    assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
+
+
 def test_show_few_columns_without_modifying_spaces(tmp_path, capsys):
     header = "Date;String;Int;Double"
     r1 = "   2010-01-01;  one   ;1;1.3"
