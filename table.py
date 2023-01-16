@@ -26,6 +26,8 @@ DEFAULT_COLUMN_TYPE_LIST = None
 DEFAULT_SORT_REVERSE_ACTION = "store_true"
 DEFAULT_SHOW_HEAD_NUMBER = None
 DEFAULT_SHOW_TAIL_NUMBER = None
+DEFAULT_SHOW_FROM_ROW = None
+DEFAULT_SHOW_TO_ROW = None
 
 
 def convert_to_text(file_data: FileContent) -> str:
@@ -171,6 +173,12 @@ def check_arguments_show(args) -> None:
         raise ValueError("head value cannot be negative")
     if args.tail is not None and args.tail < 0:
         raise ValueError("tail value cannot be negative")
+    has_row_ranges = args.from_row is not None and args.to_row is not None
+    has_not_defined_edge = (args.from_row and not args.to_row) or (
+        args.to_row and not args.from_row)
+    if has_not_defined_edge or (has_row_ranges and len(args.from_row) != len(args.to_row)):
+        raise ValueError(
+            "For each given `from_row` value one has to set `to_row` value")
 
 
 def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
@@ -202,21 +210,48 @@ def get_column_count(fc: FileContent, delimiter: str) -> int:
     return 1
 
 
-def get_row_indexes(total_row_count: int, head: int, tail: int) -> List[int]:
+def expand_int_ranges(ranges: List[Tuple[int]]) -> List[int]:
+    '''This function will take a list of ranges (start, end) and expend those into the actual range of integers.
+        Note that ranges are semi intervals, start is included and end is not.
+        For example, input [(1,2), (4,6)] will be converted into [1, 4, 5].
+        Note that function expects the list of ranges to be sorted by the left edge.
+        The resulting list will contain only unique integers which are present in at least one of the given ranges.
+    '''
+    res = []
+    for rng in ranges:
+        if rng[0] >= rng[1]:
+            continue
+        if len(res) == 0:
+            res.extend(range(rng[0], rng[1]))
+        else:
+            if res[-1] < rng[0]:
+                res.extend(range(rng[0], rng[1]))
+            elif res[-1] >= rng[0] and res[-1] + 1 < rng[1]:
+                res.extend(range(res[-1]+1, rng[1]))
+            else:
+                pass
+    return res
+
+
+def get_row_indexes(total_row_count: int, head: int, tail: int,
+                    from_index: List[int], to_index: List[int]) -> List[int]:
     '''This function will return list of row indexes based of head and tail counters.
        Returned values will be normalized to the size of the table and in case when
-       they should be combined (when we have both head and tail values) function will
-       guarantee that indexes in the returned list will be unique and will not crossect.
+       they should be combined function will guarantee that indexes in the returned 
+       list will be unique and will not crossect.
     '''
-    if head is None and tail is None:
-        return list(range(0, total_row_count))
-    res = []
-    if head:
-        res.extend(range(0, min(head, total_row_count)))
-    if tail:
-        curr_max = 0 if len(res) == 0 else res[-1] + 1
-        res.extend(range(max(curr_max, total_row_count - tail), total_row_count))
-    return res
+    if head is None and tail is None and from_index is None:
+        return expand_int_ranges([(0, total_row_count)])
+
+    ranges = []
+    if head is not None:
+        ranges.append((0, min(head, total_row_count)))
+    if tail is not None:
+        ranges.append((max(0, total_row_count - tail), total_row_count))
+    if from_index is not None:
+        ranges.extend(zip(from_index, to_index))
+    ranges.sort(key=lambda x: x[0])
+    return expand_int_ranges(ranges)
 
 
 def callback_show(args):
@@ -230,7 +265,7 @@ def callback_show(args):
             col_index = get_col_indexes(args.c_index, file_data.header,
                                         args.c_name, args.delimiter)
         row_indexes = get_row_indexes(
-            len(file_data.content), args.head, args.tail)
+            len(file_data.content), args.head, args.tail, args.from_row, args.to_row)
         file_data = apply_show(file_data, row_indexes,
                                col_index, args.delimiter)
         print_to_std_out(convert_to_text(file_data), file,
@@ -282,6 +317,16 @@ def setup_parser(parser):
                              help="Will display given number of top rows in the table")
     show_parser.add_argument("--tail", action="store", type=int, default=DEFAULT_SHOW_TAIL_NUMBER,
                              help="Will display given number of bottom rows in the table")
+    show_parser.add_argument("--from_row", "-fr", action="append", type=int,
+                             default=DEFAULT_SHOW_FROM_ROW,
+                             help="Will display all rows between the given row number and the next 'to_row' number. "
+                                  "The given row number is included into the displayed range. "
+                                  "Note that header, if present, is not taken into account in row counting")
+    show_parser.add_argument("--to_row", "-tr", action="append", type=int,
+                             default=DEFAULT_SHOW_TO_ROW,
+                             help="Will display all rows between the previously set `from_row` value and the given value. "
+                                  "The given row number is NOT included into the displayed range."
+                                  "Note that header, if present, is not taken into account in row counting")
 
     show_parser.set_defaults(callback=callback_show)
 

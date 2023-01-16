@@ -56,6 +56,8 @@ def create_default_show_args() -> Namespace:
                       create_default_column_selector())
     args.head = table.DEFAULT_SHOW_HEAD_NUMBER
     args.tail = table.DEFAULT_SHOW_TAIL_NUMBER
+    args.from_row = table.DEFAULT_SHOW_FROM_ROW
+    args.to_row = table.DEFAULT_SHOW_TO_ROW
     return args
 
 
@@ -753,21 +755,25 @@ def test_show_entire_table_with_default_parameters(tmp_path, capsys):
 
 
 def test_get_row_indexes():
-    assert table.get_row_indexes(5, None, None) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(5, 0, None) == []
-    assert table.get_row_indexes(5, None, 0) == []
-    assert table.get_row_indexes(5, 0, 0) == []
-    assert table.get_row_indexes(5, 3, None) == [0, 1, 2]
-    assert table.get_row_indexes(5, None, 3) == [2, 3, 4]
-    assert table.get_row_indexes(5, 1, 1) == [0, 4]
-    assert table.get_row_indexes(5, 3, 3) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(5, 30, 30) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(5, 10, None) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(5, None, 50) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(0, None, None) == []
-    assert table.get_row_indexes(0, 5, None) == []
-    assert table.get_row_indexes(0, None, 10) == []
-    assert table.get_row_indexes(0, 25, 10) == []
+    assert table.get_row_indexes(5, None, None, None, None) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(5, 0, None, None, None) == []
+    assert table.get_row_indexes(5, None, 0, None, None) == []
+    assert table.get_row_indexes(5, 0, 0, None, None) == []
+    assert table.get_row_indexes(5, 3, None, None, None) == [0, 1, 2]
+    assert table.get_row_indexes(5, None, 3, None, None) == [2, 3, 4]
+    assert table.get_row_indexes(5, 1, 1, None, None) == [0, 4]
+    assert table.get_row_indexes(5, 3, 3, None, None) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(5, 30, 30, None, None) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(5, 10, None, None, None) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(5, None, 50, None, None) == [0, 1, 2, 3, 4]
+    assert table.get_row_indexes(0, None, None, None, None) == []
+    assert table.get_row_indexes(0, 5, None, None, None) == []
+    assert table.get_row_indexes(0, None, 10, None, None) == []
+    assert table.get_row_indexes(0, 25, 10, None, None) == []
+    assert table.get_row_indexes(6, None, None, [1, 3], [2, 4]) == [1, 3]
+    assert table.get_row_indexes(6, None, None, [0, 1, 3], [
+                                 1, 3, 6]) == [0, 1, 2, 3, 4, 5]
+    assert table.get_row_indexes(6, 4, 2, [1, 3], [2, 4]) == [0, 1, 2, 3, 4, 5]
 
 
 def test_show_table_with_only_head(tmp_path, capsys):
@@ -1004,3 +1010,15 @@ def test_show_table_with_only_head_and_tail_and_columns(tmp_path, capsys):
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5))
+
+
+def test_expand_int_ranges():
+    assert table.expand_int_ranges([(1, 2), (4, 6)]) == [1, 4, 5]
+    assert table.expand_int_ranges([(1, 2)]) == [1]
+    assert table.expand_int_ranges([(1, 1)]) == []
+    assert table.expand_int_ranges([(1, 1), (1, 1), (1, 1)]) == []
+    assert table.expand_int_ranges([(1, 1), (2, 3), (3, 3)]) == [2]
+    assert table.expand_int_ranges([(1, 5)]) == [1, 2, 3, 4]
+    assert table.expand_int_ranges([(1, 5), (2, 7)]) == [1, 2, 3, 4, 5, 6]
+    assert table.expand_int_ranges([(1, 5), (2, 7), (3, 6)]) == [
+        1, 2, 3, 4, 5, 6]
