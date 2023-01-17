@@ -153,7 +153,7 @@ Show utility support selection by rows (by itself and combined with column selec
 There are options `head` and `tail` which allow to display given number of first or last rows in the table.
 Note that these commands can be combined, thus if one sets both `head` and `tail` values, the corresponding union of rows will be displayed.
 
-For example, Let `test.csv` content be the following
+For example, let `test.csv` content be the following
 ```
 Date;String;Int;Double
 2010-01-04;two;1;5.0
@@ -170,4 +170,33 @@ The result of the command will be
 Int;Date
 1;2010-01-04
 -4;2016-12-07
+```
+
+One can also chose certain ranges of rows to be displayed.
+It can be done by options `-from_row` (or `-fr`) and `-to_row` (or `tr`).
+One can set several ranges at the same time (including options `-head` and `-tail`) and as the output user will obtain a union of all set ranges.
+
+For example, let `test.csv` content be the following:
+```
+Date;String;Int;Double
+2010-01-04;two;1;5.0
+2011-05-23;one;2;4.5
+2008-03-12;two;-14;3.7
+2016-12-07;one;-4;0.1
+2010-01-01;hello;2;9.8
+2011-07-11;world;3;2.56
+2001-04-28;!;3;13.2
+```
+The command:
+```
+python3 table.py show -fr 1 -tr 3 -fr 4 -tr 6 -f test.csv
+```
+Where the first pair of arguments `-fr` and `-tr` defines the first row range `[1, 3)` and the second pair of these arguments defines the second range `[3, 6)`.
+Since row numeration start from 0 and header is not taken into account the result of the command will be
+```
+Date;String;Int;Double
+2011-05-23;one;2;4.5
+2008-03-12;two;-14;3.7
+2010-01-01;hello;2;9.8
+2011-07-11;world;3;2.56
 ```
