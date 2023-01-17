@@ -179,6 +179,15 @@ def check_arguments_show(args) -> None:
     if has_not_defined_edge or (has_row_ranges and len(args.from_row) != len(args.to_row)):
         raise ValueError(
             "For each given `from_row` value one has to set `to_row` value")
+    if args.from_row is not None and any(el < 0 for el in args.from_row):
+        raise ValueError(
+            "Element indexes defined in from_row arguments cannot be negative")
+    if args.to_row is not None and any(el < 0 for el in args.to_row):
+        raise ValueError(
+            "Element indexes defined in to_row arguments cannot be negative")
+    if has_row_ranges and any(fr > to for fr, to in zip(args.from_row, args.to_row)):
+        raise ValueError(
+            "End of row range cannot be smaller than the beginning of row range")
 
 
 def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
@@ -249,7 +258,9 @@ def get_row_indexes(total_row_count: int, head: int, tail: int,
     if tail is not None:
         ranges.append((max(0, total_row_count - tail), total_row_count))
     if from_index is not None:
-        ranges.extend(zip(from_index, to_index))
+        ranges.extend(map(
+            lambda x: (min(x[0], total_row_count), min(x[1], total_row_count)),
+            zip(from_index, to_index)))
     ranges.sort(key=lambda x: x[0])
     return expand_int_ranges(ranges)
 
@@ -321,12 +332,14 @@ def setup_parser(parser):
                              default=DEFAULT_SHOW_FROM_ROW,
                              help="Will display all rows between the given row number and the next 'to_row' number. "
                                   "The given row number is included into the displayed range. "
-                                  "Note that header, if present, is not taken into account in row counting")
+                                  "Note that header, if present, is not taken into account in row counting."
+                                  "Row numeration starts from 0.")
     show_parser.add_argument("--to_row", "-tr", action="append", type=int,
                              default=DEFAULT_SHOW_TO_ROW,
                              help="Will display all rows between the previously set `from_row` value and the given value. "
                                   "The given row number is NOT included into the displayed range."
-                                  "Note that header, if present, is not taken into account in row counting")
+                                  "Note that header, if present, is not taken into account in row counting."
+                                  "Row numeration starts from 0.")
 
     show_parser.set_defaults(callback=callback_show)
 

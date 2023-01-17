@@ -1022,3 +1022,99 @@ def test_expand_int_ranges():
     assert table.expand_int_ranges([(1, 5), (2, 7)]) == [1, 2, 3, 4, 5, 6]
     assert table.expand_int_ranges([(1, 5), (2, 7), (3, 6)]) == [
         1, 2, 3, 4, 5, 6]
+
+
+def test_show_table_row_range_only(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ';'
+
+    args.from_row = [0]
+    args.to_row = [0]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == header
+
+    args.from_row = [100]
+    args.to_row = [100]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == header
+
+    args.from_row = [0, 2, 4]
+    args.to_row = [1, 3, 5]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r3, r5))
+
+    args.from_row = [0, 2]
+    args.to_row = [4, 5]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
+
+    args.from_row = [0]
+    args.to_row = [5]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
+
+    args.from_row = [0]
+    args.to_row = [50]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
+
+    exp_header = "String;Int"
+    exp_r1 = " one;1"
+    exp_r2 = " three;3"
+    exp_r3 = " five;5"
+    exp_r4 = " four;4"
+    exp_r5 = " two;2"
+
+    args.c_index = [2, 0]
+    args.from_row = [1]
+    args.to_row = [4]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r2, exp_r3, exp_r4))
+
+
+def test_show_head_tail_and_ranges(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ';'
+
+    # No crossection
+    args.head = 1
+    args.tail = 1
+    args.from_row = [1, 3]
+    args.to_row = [2, 4]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r4, r5))
+
+    # With crossection
+    args.head = 3
+    args.tail = 3
+    args.from_row = [1, 2, 3, 4]
+    args.to_row = [4, 3, 5, 5]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
