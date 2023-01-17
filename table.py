@@ -28,6 +28,7 @@ DEFAULT_SHOW_HEAD_NUMBER = None
 DEFAULT_SHOW_TAIL_NUMBER = None
 DEFAULT_SHOW_FROM_ROW = None
 DEFAULT_SHOW_TO_ROW = None
+DEFAULT_SHOW_ROW_INDEX = None
 
 
 def convert_to_text(file_data: FileContent) -> str:
@@ -188,6 +189,8 @@ def check_arguments_show(args) -> None:
     if has_row_ranges and any(fr > to for fr, to in zip(args.from_row, args.to_row)):
         raise ValueError(
             "End of row range cannot be smaller than the beginning of row range")
+    if args.r_index is not None and any(el < 0 for el in args.r_index):
+        raise ValueError("Row index in -r_index argument cannot be negative.")
 
 
 def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
@@ -243,13 +246,16 @@ def expand_int_ranges(ranges: List[Tuple[int]]) -> List[int]:
 
 
 def get_row_indexes(total_row_count: int, head: int, tail: int,
-                    from_index: List[int], to_index: List[int]) -> List[int]:
-    '''This function will return list of row indexes based of head and tail counters.
+                    from_index: List[int], to_index: List[int],
+                    r_index: List[int]) -> List[int]:
+    '''This function will return list of row indexes based of head and tail counters,
+       ranges defined by from_index and to_index arrays and list of exact indexes -
+       r_index.
        Returned values will be normalized to the size of the table and in case when
        they should be combined function will guarantee that indexes in the returned 
        list will be unique and will not crossect.
     '''
-    if head is None and tail is None and from_index is None:
+    if head is None and tail is None and from_index is None and r_index is None:
         return expand_int_ranges([(0, total_row_count)])
 
     ranges = []
@@ -261,6 +267,9 @@ def get_row_indexes(total_row_count: int, head: int, tail: int,
         ranges.extend(map(
             lambda x: (min(x[0], total_row_count), min(x[1], total_row_count)),
             zip(from_index, to_index)))
+    if r_index is not None:
+        ranges.extend((min(x, total_row_count), min(
+            x+1, total_row_count)) for x in r_index)
     ranges.sort(key=lambda x: x[0])
     return expand_int_ranges(ranges)
 
@@ -275,8 +284,9 @@ def callback_show(args):
         if not no_columns_set:
             col_index = get_col_indexes(args.c_index, file_data.header,
                                         args.c_name, args.delimiter)
-        row_indexes = get_row_indexes(
-            len(file_data.content), args.head, args.tail, args.from_row, args.to_row)
+        row_indexes = get_row_indexes(len(file_data.content), args.head,
+                                      args.tail, args.from_row, args.to_row,
+                                      args.r_index)
         file_data = apply_show(file_data, row_indexes,
                                col_index, args.delimiter)
         print_to_std_out(convert_to_text(file_data), file,
@@ -340,6 +350,11 @@ def setup_parser(parser):
                                   "The given row number is NOT included into the displayed range."
                                   "Note that header, if present, is not taken into account in row counting."
                                   "Row numeration starts from 0.")
+    show_parser.add_argument("--r_index", "-ri", action="append", type=int,
+                             default=DEFAULT_SHOW_ROW_INDEX,
+                             help="Exact index of row which will be displayed. "
+                                  "Index numeration starts from 0 and does not "
+                                  "take into account header if it is present.")
 
     show_parser.set_defaults(callback=callback_show)
 

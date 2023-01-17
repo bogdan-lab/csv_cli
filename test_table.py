@@ -58,6 +58,7 @@ def create_default_show_args() -> Namespace:
     args.tail = table.DEFAULT_SHOW_TAIL_NUMBER
     args.from_row = table.DEFAULT_SHOW_FROM_ROW
     args.to_row = table.DEFAULT_SHOW_TO_ROW
+    args.r_index = table.DEFAULT_SHOW_ROW_INDEX
     return args
 
 
@@ -755,25 +756,143 @@ def test_show_entire_table_with_default_parameters(tmp_path, capsys):
 
 
 def test_get_row_indexes():
-    assert table.get_row_indexes(5, None, None, None, None) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(5, 0, None, None, None) == []
-    assert table.get_row_indexes(5, None, 0, None, None) == []
-    assert table.get_row_indexes(5, 0, 0, None, None) == []
-    assert table.get_row_indexes(5, 3, None, None, None) == [0, 1, 2]
-    assert table.get_row_indexes(5, None, 3, None, None) == [2, 3, 4]
-    assert table.get_row_indexes(5, 1, 1, None, None) == [0, 4]
-    assert table.get_row_indexes(5, 3, 3, None, None) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(5, 30, 30, None, None) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(5, 10, None, None, None) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(5, None, 50, None, None) == [0, 1, 2, 3, 4]
-    assert table.get_row_indexes(0, None, None, None, None) == []
-    assert table.get_row_indexes(0, 5, None, None, None) == []
-    assert table.get_row_indexes(0, None, 10, None, None) == []
-    assert table.get_row_indexes(0, 25, 10, None, None) == []
-    assert table.get_row_indexes(6, None, None, [1, 3], [2, 4]) == [1, 3]
-    assert table.get_row_indexes(6, None, None, [0, 1, 3], [
-                                 1, 3, 6]) == [0, 1, 2, 3, 4, 5]
-    assert table.get_row_indexes(6, 4, 2, [1, 3], [2, 4]) == [0, 1, 2, 3, 4, 5]
+    res = table.get_row_indexes(total_row_count=5,
+                                head=None, tail=None,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=0, tail=None,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == []
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=None, tail=0,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == []
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=0, tail=0,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == []
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=3, tail=None,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == [0, 1, 2]
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=None, tail=3,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == [2, 3, 4]
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=1, tail=1,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == [0, 4]
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=3, tail=3,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=30, tail=30,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=10, tail=None,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = table.get_row_indexes(total_row_count=5,
+                                head=None, tail=50,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = table.get_row_indexes(total_row_count=0,
+                                head=None, tail=None,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == []
+
+    res = table.get_row_indexes(total_row_count=0,
+                                head=5, tail=None,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == []
+
+    res = table.get_row_indexes(total_row_count=0,
+                                head=None, tail=10,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == []
+
+    res = table.get_row_indexes(total_row_count=0,
+                                head=25, tail=10,
+                                from_index=None, to_index=None,
+                                r_index=None)
+    assert res == []
+
+    res = table.get_row_indexes(total_row_count=0,
+                                head=None, tail=None,
+                                from_index=None, to_index=None,
+                                r_index=[1, 2, 3, 4, 5])
+    assert res == []
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=None, tail=None,
+                                from_index=[1, 3], to_index=[2, 4],
+                                r_index=None)
+    assert res == [1, 3]
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=None, tail=None,
+                                from_index=[0, 1, 3], to_index=[1, 3, 6],
+                                r_index=None)
+    assert res == [0, 1, 2, 3, 4, 5]
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=4, tail=2,
+                                from_index=[1, 3], to_index=[2, 4],
+                                r_index=None)
+    assert res == [0, 1, 2, 3, 4, 5]
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=None, tail=None,
+                                from_index=None, to_index=None,
+                                r_index=[1, 3, 4, 5])
+    assert res == [1, 3, 4, 5]
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=None, tail=None,
+                                from_index=None, to_index=None,
+                                r_index=[1000])
+    assert res == []
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=1, tail=1,
+                                from_index=None, to_index=None,
+                                r_index=[2])
+    assert res == [0, 2, 5]
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=1, tail=1,
+                                from_index=[1], to_index=[4],
+                                r_index=[2, 3, 5])
+    assert res == [0, 1, 2, 3, 5]
 
 
 def test_show_table_with_only_head(tmp_path, capsys):
@@ -1115,6 +1234,77 @@ def test_show_head_tail_and_ranges(tmp_path, capsys):
     args.tail = 3
     args.from_row = [1, 2, 3, 4]
     args.to_row = [4, 3, 5, 5]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
+
+
+def test_show_specific_rows(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ';'
+
+    args.r_index = [0, 2, 4]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r3, r5))
+
+    args.r_index = [4, 2, 0]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r3, r5))
+
+    exp_header = "Int;String"
+    exp_r1 = "1; one"
+    exp_r2 = "3; three"
+    exp_r3 = "5; five"
+    exp_r4 = "4; four"
+    exp_r5 = "2; two"
+    args.c_index = [0, 2]
+    args.r_index = [1, 2, 20]
+
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r2, exp_r3))
+
+
+def test_show_all_row_filters_together(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ';'
+
+    # No crossection
+    args.head = 1
+    args.tail = 1
+    args.from_row = [1]
+    args.to_row = [2]
+    args.r_index = [3]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r4, r5))
+
+    # With crossection
+    args.head = 2
+    args.tail = 2
+    args.from_row = [1, 2]
+    args.to_row = [3, 5]
+    args.r_index = [1, 3, 4]
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
