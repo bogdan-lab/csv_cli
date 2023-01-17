@@ -14,10 +14,15 @@ def create_file(file_path: Path, content: Iterable) -> Path:
     return file_path
 
 
+def convert_argparser_action_to_bool(action: str) -> bool:
+    return not action == "store_true"
+
+
 def create_default_file_params() -> Namespace():
     args = Namespace()
     args.delimiter = table.DEFAULT_TABLE_DELIMITER
-    args.no_header = False if table.DEFAULT_NO_HEADER_ACTION == "store_true" else False
+    args.no_header = convert_argparser_action_to_bool(
+        table.DEFAULT_NO_HEADER_ACTION)
     return args
 
 
@@ -30,7 +35,8 @@ def create_default_column_selector() -> Namespace():
 
 def create_default_inplace_argument() -> Namespace:
     args = Namespace()
-    args.inplace = False if table.DEFAULT_INPLACE_ACTION == "store_true" else False
+    args.inplace = convert_argparser_action_to_bool(
+        table.DEFAULT_INPLACE_ACTION)
     return args
 
 
@@ -47,7 +53,8 @@ def create_default_sort_args() -> Namespace:
                       create_default_inplace_argument())
     args.c_type = table.DEFAULT_COLUMN_TYPE_LIST
     args.time_fmt = table.DEFAULT_TIME_FORMAT
-    args.reverse = False if table.DEFAULT_SORT_REVERSE_ACTION == "store_true" else False
+    args.reverse = convert_argparser_action_to_bool(
+        table.DEFAULT_SORT_REVERSE_ACTION)
     return args
 
 
@@ -59,6 +66,8 @@ def create_default_show_args() -> Namespace:
     args.from_row = table.DEFAULT_SHOW_FROM_ROW
     args.to_row = table.DEFAULT_SHOW_TO_ROW
     args.r_index = table.DEFAULT_SHOW_ROW_INDEX
+    args.hide_header = convert_argparser_action_to_bool(
+        table.DEFAULT_SHOW_HIDE_HEADER_ACTION)
     return args
 
 
@@ -1308,3 +1317,50 @@ def test_show_all_row_filters_together(tmp_path, capsys):
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
+
+
+def test_show_everything_without_header(tmp_path, capsys):
+    header = "Int;Double;String"
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ';'
+    args.hide_header = True
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
+
+
+def test_show_hide_header_whith_no_rows(tmp_path, capsys):
+    header = "Int;Double;String"
+    fpath = create_file(tmp_path / "test.csv", (header,))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.hide_header = True
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == ""
+
+
+def test_show_hide_header_ignored_when_no_header_present(tmp_path, capsys):
+    r1 = "1; 1.0; one"
+    r2 = "3; 3.0; three"
+    r3 = "5; 5.0; five"
+    r4 = "4; 4.0; four"
+    r5 = "2; 2.0; two"
+    fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.no_header = True
+    args.hide_header = True
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))

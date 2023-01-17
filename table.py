@@ -29,6 +29,7 @@ DEFAULT_SHOW_TAIL_NUMBER = None
 DEFAULT_SHOW_FROM_ROW = None
 DEFAULT_SHOW_TO_ROW = None
 DEFAULT_SHOW_ROW_INDEX = None
+DEFAULT_SHOW_HIDE_HEADER_ACTION = "store_true"
 
 
 def convert_to_text(file_data: FileContent) -> str:
@@ -204,10 +205,10 @@ def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
 
 
 def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List[int],
-               delimiter: str) -> FileContent:
+               delimiter: str, hide_header: bool) -> FileContent:
     '''Forms new FileContent object which containes only selected column indexes'''
     new_header = None
-    if file_data.header:
+    if file_data.header and not hide_header:
         new_header = select_from_row(file_data.header, delimiter, col_indexes)
     return FileContent(new_header,
                        tuple(select_from_row(file_data.content[i], delimiter, col_indexes)
@@ -288,7 +289,7 @@ def callback_show(args):
                                       args.tail, args.from_row, args.to_row,
                                       args.r_index)
         file_data = apply_show(file_data, row_indexes,
-                               col_index, args.delimiter)
+                               col_index, args.delimiter, args.hide_header)
         print_to_std_out(convert_to_text(file_data), file,
                          need_to_mark_filename=len(args.files) > 1)
 
@@ -355,6 +356,10 @@ def setup_parser(parser):
                              help="Exact index of row which will be displayed. "
                                   "Index numeration starts from 0 and does not "
                                   "take into account header if it is present.")
+    show_parser.add_argument("--hide_header", action=DEFAULT_SHOW_HIDE_HEADER_ACTION,
+                             help="If set, header will not be displayed even if it is present in the table."
+                                  "Note that in order to hide the header user still need to mark "
+                                  "that the table contains one.")
 
     show_parser.set_defaults(callback=callback_show)
 
