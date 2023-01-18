@@ -63,6 +63,8 @@ def create_default_show_args() -> Namespace:
                       create_default_column_selector())
     args.r_head = table.DEFAULT_SHOW_ROW_HEAD_NUMBER
     args.r_tail = table.DEFAULT_SHOW_ROW_TAIL_NUMBER
+    args.c_head = table.DEFAULT_SHOW_COL_HEAD_NUMBER
+    args.c_tail = table.DEFAULT_SHOW_COL_TAIL_NUMBER
     args.from_row = table.DEFAULT_SHOW_FROM_ROW
     args.to_row = table.DEFAULT_SHOW_TO_ROW
     args.r_index = table.DEFAULT_SHOW_ROW_INDEX
@@ -658,11 +660,11 @@ def test_show_few_columns_in_different_order(tmp_path, capsys):
 
     out = capsys.readouterr().out
 
-    exp_header = "Int;Date"
-    exp_r1 = "1;2010-01-01"
-    exp_r2 = "2;2010-07-02"
-    exp_r3 = "3;2010-06-03"
-    exp_r4 = "4;2010-11-03"
+    exp_header = "Date;Int"
+    exp_r1 = "2010-01-01;1"
+    exp_r2 = "2010-07-02;2"
+    exp_r3 = "2010-06-03;3"
+    exp_r4 = "2010-11-03;4"
     # in captured data we have a new line at the end
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r3, exp_r4))
 
@@ -701,12 +703,15 @@ def test_show_from_empty_file_all(tmp_path, capsys):
     args.delimiter = ";"
     args.files = [fpath]
     args.no_header = True
-
     table.callback_show(args)
-
     out = capsys.readouterr().out
-
     assert out == "\n"
+
+    # Show file with empty header
+    args.no_header = False
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out == '\n'
 
 
 def test_show_from_file_with_header_only(tmp_path, capsys):
@@ -1022,12 +1027,12 @@ def test_show_table_with_only_tail_and_columns(tmp_path, capsys):
     r5 = "2; 2.0; two"
     fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3, r4, r5))
 
-    exp_header = "String;Int"
-    exp_r1 = " one;1"
-    exp_r2 = " three;3"
-    exp_r3 = " five;5"
-    exp_r4 = " four;4"
-    exp_r5 = " two;2"
+    exp_header = "Int;String"
+    exp_r1 = "1; one"
+    exp_r2 = "3; three"
+    exp_r3 = "5; five"
+    exp_r4 = "4; four"
+    exp_r5 = "2; two"
 
     args = create_default_show_args()
     args.files = [fpath]
@@ -1201,12 +1206,12 @@ def test_show_table_row_range_only(tmp_path, capsys):
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
 
-    exp_header = "String;Int"
-    exp_r1 = " one;1"
-    exp_r2 = " three;3"
-    exp_r3 = " five;5"
-    exp_r4 = " four;4"
-    exp_r5 = " two;2"
+    exp_header = "Int;String"
+    exp_r1 = "1; one"
+    exp_r2 = "3; three"
+    exp_r3 = "5; five"
+    exp_r4 = "4; four"
+    exp_r5 = "2; two"
 
     args.c_index = [2, 0]
     args.from_row = [1]
@@ -1364,3 +1369,124 @@ def test_show_hide_header_ignored_when_no_header_present(tmp_path, capsys):
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
+
+
+def test_show_column_head_and_tail(tmp_path, capsys):
+    r1 = "1,2,3,4,5,6,7,8,9"
+    r2 = "11,12,13,14,15,16,17,18,19"
+    r3 = "111,112,113,114,115,116,117,118,119"
+    fpath = create_file(tmp_path/"test.csv", (r1, r2, r3))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.no_header = True
+    args.delimiter = ','
+
+    args.c_head = 0
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == ""
+
+    args.c_tail = 0
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == ""
+
+    exp_r1 = "1,2,3,4"
+    exp_r2 = "11,12,13,14"
+    exp_r3 = "111,112,113,114"
+    args.c_head = 4
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_r1, exp_r2, exp_r3))
+
+    exp_r1 = "6,7,8,9"
+    exp_r2 = "16,17,18,19"
+    exp_r3 = "116,117,118,119"
+    args.c_head = None
+    args.c_tail = 4
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_r1, exp_r2, exp_r3))
+
+    exp_r1 = "1,2,9"
+    exp_r2 = "11,12,19"
+    exp_r3 = "111,112,119"
+    args.c_head = 2
+    args.c_tail = 1
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_r1, exp_r2, exp_r3))
+
+    args.c_tail = None
+    args.c_head = 20
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r3))
+
+    args.c_head = None
+    args.c_tail = 20
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r3))
+
+    args.c_head = 5
+    args.c_tail = 5
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r3))
+
+
+def test_show_column_head_tail_and_particular(tmp_path, capsys):
+    header = "one,trow,three,four,five"
+    r1 = "1,2,3,4,5"
+    r2 = "11,12,13,14,15"
+    r3 = "21,22,23,24,25"
+    r4 = "31,32,33,34,35"
+    r5 = "41,42,43,44,45"
+    r6 = "51,52,53,54,55"
+    fpath = create_file(tmp_path / "test.csv",
+                        (header, r1, r2, r3, r4, r5, r6))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ','
+
+    # No crossection
+    exp_header = "one,three,four,five"
+    exp_r1 = "1,3,4,5"
+    exp_r2 = "11,13,14,15"
+    exp_r3 = "21,23,24,25"
+    exp_r4 = "31,33,34,35"
+    exp_r5 = "41,43,44,45"
+    exp_r6 = "51,53,54,55"
+
+    args.c_head = 1
+    args.c_tail = 1
+    args.c_name = ["three", "four"]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1,
+                                 exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
+
+    # With croseection
+    exp_header = "three,four,five"
+    exp_r1 = "3,4,5"
+    exp_r2 = "13,14,15"
+    exp_r3 = "23,24,25"
+    exp_r4 = "33,34,35"
+    exp_r5 = "43,44,45"
+    exp_r6 = "53,54,55"
+    args.c_head = None
+    args.c_tail = 2
+    args.c_name = ["three", "four"]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1,
+                                 exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
+
+    # With some row filter
+    args.r_head = 2
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2))

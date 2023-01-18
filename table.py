@@ -26,6 +26,8 @@ DEFAULT_COLUMN_TYPE_LIST = None
 DEFAULT_SORT_REVERSE_ACTION = "store_true"
 DEFAULT_SHOW_ROW_HEAD_NUMBER = None
 DEFAULT_SHOW_ROW_TAIL_NUMBER = None
+DEFAULT_SHOW_COL_HEAD_NUMBER = None
+DEFAULT_SHOW_COL_TAIL_NUMBER = None
 DEFAULT_SHOW_FROM_ROW = None
 DEFAULT_SHOW_TO_ROW = None
 DEFAULT_SHOW_ROW_INDEX = None
@@ -204,6 +206,18 @@ def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
     return delimiter.join(l[i] for i in col_indexes)
 
 
+def selected_rows_generator(content: Tuple[str], delimiter: str,
+                            col_indexes: List[int], row_indexes: List[int]):
+    '''This generator yields rows with row_indexes, which are already filtered
+       and contain only col_indexes columns
+    '''
+    for i in row_indexes:
+        l = content[i].split(delimiter)
+        res = delimiter.join(l[j] for j in col_indexes)
+        if res:
+            yield res
+
+
 def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List[int],
                delimiter: str, hide_header: bool) -> FileContent:
     '''Forms new FileContent object which containes only selected column indexes'''
@@ -211,8 +225,7 @@ def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List
     if file_data.header and not hide_header:
         new_header = select_from_row(file_data.header, delimiter, col_indexes)
     return FileContent(new_header,
-                       tuple(select_from_row(file_data.content[i], delimiter, col_indexes)
-                             for i in row_indexes))
+                       tuple(el for el in selected_rows_generator(file_data.content, delimiter, col_indexes, row_indexes)))
 
 
 def get_column_count(fc: FileContent, delimiter: str) -> int:
@@ -275,21 +288,40 @@ def get_row_indexes(total_row_count: int, head: int, tail: int,
     return expand_int_ranges(ranges)
 
 
+def merge_particular_c_indexes(c_index: List[int], c_name: List[str],
+                               header: str, delimiter: str) -> List[int]:
+    '''Function takes as an input two lists which define particular columns in the table.
+       The first list contains columns indexes, the second - columns names.
+       Function converts name list into the one with indexes and merges
+       it with the initial index list (without sorting).
+       The merge result is returned.
+    '''
+    if c_index is None and c_name is None:
+        return None
+    res = []
+    if c_index is not None:
+        res.extend(c_index)
+    if c_name is not None:
+        res.extend(get_col_indexes(None, header, c_name, delimiter))
+    return res
+
+
 def callback_show(args):
     '''Performes columns selection from file according the the given arguments'''
     check_arguments_show(args)
     no_columns_set = args.c_index is None and args.c_name is None
     for file in args.files:
         file_data = read_file(file, not args.no_header)
-        col_index = list(range(0, get_column_count(file_data, args.delimiter)))
-        if not no_columns_set:
-            col_index = get_col_indexes(args.c_index, file_data.header,
-                                        args.c_name, args.delimiter)
+        column_count = get_column_count(file_data, args.delimiter)
+        c_index = merge_particular_c_indexes(
+            args.c_index, args.c_name, file_data.header, args.delimiter)
+        col_indexes = get_row_indexes(
+            column_count, args.c_head, args.c_tail, None, None, c_index)
         row_indexes = get_row_indexes(len(file_data.content), args.r_head,
                                       args.r_tail, args.from_row, args.to_row,
                                       args.r_index)
         file_data = apply_show(file_data, row_indexes,
-                               col_index, args.delimiter, args.hide_header)
+                               col_indexes, args.delimiter, args.hide_header)
         print_to_std_out(convert_to_text(file_data), file,
                          need_to_mark_filename=len(args.files) > 1)
 
@@ -336,9 +368,13 @@ def setup_parser(parser):
                                         help="Allows to selectively show table content",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     show_parser.add_argument("--r_head", action="store", type=int, default=DEFAULT_SHOW_ROW_HEAD_NUMBER,
-                             help="Will display given number of top rows in the table")
+                             help="Will display given number of top rows in the table. Value is normalzied to the row number.")
     show_parser.add_argument("--r_tail", action="store", type=int, default=DEFAULT_SHOW_ROW_TAIL_NUMBER,
-                             help="Will display given number of bottom rows in the table")
+                             help="Will display given number of bottom rows in the table. Value is normalized to the row number.")
+    show_parser.add_argument("--c_head", action="store", type=int, default=DEFAULT_SHOW_COL_HEAD_NUMBER,
+                             help="Will display given number of the first columns in the table. Value is normalized to the column number.")
+    show_parser.add_argument("--c_tail", action="store", type=int, default=DEFAULT_SHOW_COL_TAIL_NUMBER,
+                             help="Will display given number of the last columns in the table. Value is normalized to the column number.")
     show_parser.add_argument("--from_row", "-fr", action="append", type=int,
                              default=DEFAULT_SHOW_FROM_ROW,
                              help="Will display all rows between the given row number and the next 'to_row' number. "
