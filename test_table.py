@@ -878,6 +878,13 @@ def test_get_row_indexes():
 
     res = table.get_row_indexes(total_row_count=6,
                                 head=None, tail=None,
+                                from_index=[1, 1, 1, 3, 3],
+                                to_index=[2, 2, 2, 4, 4],
+                                r_index=None)
+    assert res == [1, 3]
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=None, tail=None,
                                 from_index=[0, 1, 3], to_index=[1, 3, 6],
                                 r_index=None)
     assert res == [0, 1, 2, 3, 4, 5]
@@ -897,6 +904,12 @@ def test_get_row_indexes():
     res = table.get_row_indexes(total_row_count=6,
                                 head=None, tail=None,
                                 from_index=None, to_index=None,
+                                r_index=[1, 1, 1, 1, 1, 1])
+    assert res == [1]
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=None, tail=None,
+                                from_index=None, to_index=None,
                                 r_index=[1000])
     assert res == []
 
@@ -910,6 +923,12 @@ def test_get_row_indexes():
                                 head=1, tail=1,
                                 from_index=[1], to_index=[4],
                                 r_index=[2, 3, 5])
+    assert res == [0, 1, 2, 3, 5]
+
+    res = table.get_row_indexes(total_row_count=6,
+                                head=1, tail=1,
+                                from_index=[1, 1, 1], to_index=[4, 4, 4],
+                                r_index=[2, 2, 3, 3, 3, 5, 5])
     assert res == [0, 1, 2, 3, 5]
 
 
