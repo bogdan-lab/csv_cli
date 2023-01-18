@@ -34,6 +34,7 @@ DEFAULT_SHOW_FROM_COL = None
 DEFAULT_SHOW_TO_COL = None
 DEFAULT_SHOW_ROW_INDEX = None
 DEFAULT_SHOW_HIDE_HEADER_ACTION = "store_true"
+DEFAULT_SHOW_EXCEPT_ACTION = "store_true"
 
 
 def convert_to_text(file_data: FileContent) -> str:
@@ -329,20 +330,37 @@ def merge_particular_c_indexes(c_index: List[int], c_name: List[str],
     return res
 
 
+def invert_indexes(indexes: List, size: int) -> List[int]:
+    '''Function will return all indexes from the range [0, size) which are not 
+       mentioned in the indexes list. The function expects that "indexes" list
+       will be sorted
+    '''
+    res = []
+    j = 0
+    for i in range(size):
+        if j < len(indexes) and i == indexes[j]:
+            j += 1
+        else:
+            res.append(i)
+    return res
+
+
 def callback_show(args):
     '''Performes columns selection from file according the the given arguments'''
     check_arguments_show(args)
-    no_columns_set = args.c_index is None and args.c_name is None
     for file in args.files:
         file_data = read_file(file, not args.no_header)
         column_count = get_column_count(file_data, args.delimiter)
+        row_count = len(file_data.content)
         c_index = merge_particular_c_indexes(
             args.c_index, args.c_name, file_data.header, args.delimiter)
         col_indexes = get_row_indexes(
             column_count, args.c_head, args.c_tail, args.from_col, args.to_col, c_index)
-        row_indexes = get_row_indexes(len(file_data.content), args.r_head,
-                                      args.r_tail, args.from_row, args.to_row,
-                                      args.r_index)
+        row_indexes = get_row_indexes(row_count, args.r_head, args.r_tail,
+                                      args.from_row, args.to_row, args.r_index)
+        if args.except_flag:
+            col_indexes = invert_indexes(col_indexes, column_count)
+            row_indexes = invert_indexes(row_indexes, row_count)
         file_data = apply_show(file_data, row_indexes,
                                col_indexes, args.delimiter, args.hide_header)
         print_to_std_out(convert_to_text(file_data), file,
@@ -429,6 +447,8 @@ def setup_parser(parser):
                              help="If set, header will not be displayed even if it is present in the table."
                                   "Note that in order to hide the header user still need to mark "
                                   "that the table contains one.")
+    show_parser.add_argument("--except", dest="except_flag", action=DEFAULT_SHOW_EXCEPT_ACTION,
+                             help="If set then showing utility will desplay all table rows and columns except those defined by arguments above.")
 
     show_parser.set_defaults(callback=callback_show)
 

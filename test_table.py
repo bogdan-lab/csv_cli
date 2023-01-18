@@ -72,6 +72,8 @@ def create_default_show_args() -> Namespace:
     args.r_index = table.DEFAULT_SHOW_ROW_INDEX
     args.hide_header = convert_argparser_action_to_bool(
         table.DEFAULT_SHOW_HIDE_HEADER_ACTION)
+    args.except_flag = convert_argparser_action_to_bool(
+        table.DEFAULT_SHOW_EXCEPT_ACTION)
     return args
 
 
@@ -1555,3 +1557,92 @@ def test_show_column_ranges_and_all(tmp_path, capsys):
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1], '\n'.join((header, r1, r2, r3, r4, r5, r6))
+
+
+def test_show_except_show_all(tmp_path, capsys):
+    header = "One,Twom,Three,Four,Five"
+    r1 = "1,2,3,4,5"
+    r2 = "11,22,33,44,55"
+    r3 = "12,23,34,45,56"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    # Without delimiter
+    args.except_flag = True
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == ""
+
+    # With delimiter
+    args.delimiter = ','
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == ""
+
+    # Case with empty file
+    fpath = tmp_path / "empty.csv"
+    fpath.touch()
+
+    args.files = [fpath]
+    args.except_flag = True
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == ""
+
+
+def test_show_except_show_nothing(tmp_path, capsys):
+    header = "One,Twom,Three,Four,Five"
+    r1 = "1,2,3,4,5"
+    r2 = "11,22,33,44,55"
+    r3 = "12,23,34,45,56"
+    fpath = create_file(tmp_path / "test.csv", (header, r1, r2, r3))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.r_head = 0
+    args.c_head = 0
+    args.except_flag = True
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((header, r1, r2, r3))
+
+    # Case with empty file
+    fpath = tmp_path / "empty.csv"
+    fpath.touch()
+    args.files = [fpath]
+    args.r_head = 0
+    args.c_head = 0
+    args.except_flag = True
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == ""
+
+
+def test_show_except_show_selected(tmp_path, capsys):
+    header = "one,two,three,four,five"
+    r1 = "1,2,3,4,5"
+    r2 = "11,12,13,14,15"
+    r3 = "21,22,23,24,25"
+    r4 = "31,32,33,34,35"
+    r5 = "41,42,43,44,45"
+    r6 = "51,52,53,54,55"
+    fpath = create_file(tmp_path / "test.csv",
+                        (header, r1, r2, r3, r4, r5, r6))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ','
+    args.r_head = 1
+    args.r_tail = 1
+    args.r_index = [3]
+    args.c_index = [0, 2, 4]
+    args.except_flag = True
+    table.callback_show(args)
+    out = capsys.readouterr().out
+
+    exp_header = "two,four"
+    exp_r2 = "12,14"
+    exp_r3 = "22,24"
+    exp_r5 = "42,44"
+    assert out[:-1] == '\n'.join((exp_header, exp_r2, exp_r3, exp_r5))
