@@ -67,6 +67,8 @@ def create_default_show_args() -> Namespace:
     args.c_tail = table.DEFAULT_SHOW_COL_TAIL_NUMBER
     args.from_row = table.DEFAULT_SHOW_FROM_ROW
     args.to_row = table.DEFAULT_SHOW_TO_ROW
+    args.from_col = table.DEFAULT_SHOW_FROM_COL
+    args.to_col = table.DEFAULT_SHOW_TO_COL
     args.r_index = table.DEFAULT_SHOW_ROW_INDEX
     args.hide_header = convert_argparser_action_to_bool(
         table.DEFAULT_SHOW_HIDE_HEADER_ACTION)
@@ -1490,3 +1492,66 @@ def test_show_column_head_tail_and_particular(tmp_path, capsys):
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2))
+
+
+def test_show_column_ranges_and_all(tmp_path, capsys):
+    header = "one,two,three,four,five"
+    r1 = "1,2,3,4,5"
+    r2 = "11,12,13,14,15"
+    r3 = "21,22,23,24,25"
+    r4 = "31,32,33,34,35"
+    r5 = "41,42,43,44,45"
+    r6 = "51,52,53,54,55"
+    fpath = create_file(tmp_path / "test.csv",
+                        (header, r1, r2, r3, r4, r5, r6))
+
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ','
+
+    # No crossection
+    exp_header = "one,three,four,five"
+    exp_r1 = "1,3,4,5"
+    exp_r2 = "11,13,14,15"
+    exp_r3 = "21,23,24,25"
+    exp_r4 = "31,33,34,35"
+    exp_r5 = "41,43,44,45"
+    exp_r6 = "51,53,54,55"
+
+    args.from_col = [0, 2]
+    args.to_col = [1, 10]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1,
+                                 exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
+
+    # With croseection
+    exp_header = "three,four,five"
+    exp_r1 = "3,4,5"
+    exp_r2 = "13,14,15"
+    exp_r3 = "23,24,25"
+    exp_r4 = "33,34,35"
+    exp_r5 = "43,44,45"
+    exp_r6 = "53,54,55"
+    args.from_col = [2, 3]
+    args.to_col = [4, 5]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1,
+                                 exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
+
+    # With some row filter
+    args.r_head = 2
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2))
+
+    # With others
+    args.r_head = None
+    args.c_head = 1
+    args.c_tail = 1
+    args.from_col = [1]
+    args.to_col = [4]
+    table.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1], '\n'.join((header, r1, r2, r3, r4, r5, r6))

@@ -30,6 +30,8 @@ DEFAULT_SHOW_COL_HEAD_NUMBER = None
 DEFAULT_SHOW_COL_TAIL_NUMBER = None
 DEFAULT_SHOW_FROM_ROW = None
 DEFAULT_SHOW_TO_ROW = None
+DEFAULT_SHOW_FROM_COL = None
+DEFAULT_SHOW_TO_COL = None
 DEFAULT_SHOW_ROW_INDEX = None
 DEFAULT_SHOW_HIDE_HEADER_ACTION = "store_true"
 
@@ -170,6 +172,8 @@ def check_arguments_show(args) -> None:
     If it is not an exception will be raised'''
     if args.c_index is not None and args.c_name is not None:
         raise ValueError("Please define column by index OR by name!")
+    if args.c_index is not None and any(el < 0 for el in args.c_index):
+        raise ValueError("Column index cannot have negative value.")
     if args.c_name is not None and args.no_header:
         raise ValueError(
             "You cannot select column by name if there is no header")
@@ -178,22 +182,41 @@ def check_arguments_show(args) -> None:
     if args.r_tail is not None and args.r_tail < 0:
         raise ValueError("Row tail value cannot be negative")
     has_row_ranges = args.from_row is not None and args.to_row is not None
-    has_not_defined_edge = (args.from_row and not args.to_row) or (
+    miss_row_edge = (args.from_row and not args.to_row) or (
         args.to_row and not args.from_row)
-    if has_not_defined_edge or (has_row_ranges and len(args.from_row) != len(args.to_row)):
+    if miss_row_edge or (has_row_ranges and len(args.from_row) != len(args.to_row)):
         raise ValueError(
             "For each given `from_row` value one has to set `to_row` value")
     if args.from_row is not None and any(el < 0 for el in args.from_row):
         raise ValueError(
-            "Element indexes defined in from_row arguments cannot be negative")
+            "Row indexes defined in from_row arguments cannot be negative")
     if args.to_row is not None and any(el < 0 for el in args.to_row):
         raise ValueError(
-            "Element indexes defined in to_row arguments cannot be negative")
+            "Row indexes defined in to_row arguments cannot be negative")
     if has_row_ranges and any(fr > to for fr, to in zip(args.from_row, args.to_row)):
         raise ValueError(
             "End of row range cannot be smaller than the beginning of row range")
     if args.r_index is not None and any(el < 0 for el in args.r_index):
         raise ValueError("Row index in -r_index argument cannot be negative.")
+    if args.c_head is not None and args.c_head < 0:
+        raise ValueError("Column head value cannot be negative")
+    if args.c_tail is not None and args.c_tail < 0:
+        raise ValueError("Column tail value cannot be negative")
+    has_col_ranges = args.from_col is not None and args.to_col is not None
+    miss_col_edge = (args.from_col and not args.to_col) or (
+        args.to_col and not args.from_col)
+    if miss_col_edge or (has_col_ranges and len(args.from_col) != len(args.to_col)):
+        raise ValueError(
+            "For each given `from_col` value one has to set `to_col` value")
+    if args.from_col is not None and any(el < 0 for el in args.from_col):
+        raise ValueError(
+            "Column indexes defined in from_col arguments cannot be negative")
+    if args.to_col is not None and any(el < 0 for el in args.to_col):
+        raise ValueError(
+            "Column indexes defined in to_col arguments cannot be negative")
+    if has_col_ranges and any(fr > to for fr, to in zip(args.from_col, args.to_col)):
+        raise ValueError(
+            "End of col range cannot be smaller than the beginning of column range")
 
 
 def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
@@ -316,7 +339,7 @@ def callback_show(args):
         c_index = merge_particular_c_indexes(
             args.c_index, args.c_name, file_data.header, args.delimiter)
         col_indexes = get_row_indexes(
-            column_count, args.c_head, args.c_tail, None, None, c_index)
+            column_count, args.c_head, args.c_tail, args.from_col, args.to_col, c_index)
         row_indexes = get_row_indexes(len(file_data.content), args.r_head,
                                       args.r_tail, args.from_row, args.to_row,
                                       args.r_index)
@@ -377,16 +400,26 @@ def setup_parser(parser):
                              help="Will display given number of the last columns in the table. Value is normalized to the column number.")
     show_parser.add_argument("--from_row", "-fr", action="append", type=int,
                              default=DEFAULT_SHOW_FROM_ROW,
-                             help="Will display all rows between the given row number and the next 'to_row' number. "
-                                  "The given row number is included into the displayed range. "
+                             help="Will display all rows between the given row index and the next 'to_row' number. "
+                                  "The given row index is included into the displayed range. "
                                   "Note that header, if present, is not taken into account in row counting."
                                   "Row numeration starts from 0.")
     show_parser.add_argument("--to_row", "-tr", action="append", type=int,
                              default=DEFAULT_SHOW_TO_ROW,
-                             help="Will display all rows between the previously set `from_row` value and the given value. "
-                                  "The given row number is NOT included into the displayed range."
+                             help="Will display all rows between the previously set `from_row` index and the given one. "
+                                  "The given row index is NOT included into the displayed range."
                                   "Note that header, if present, is not taken into account in row counting."
                                   "Row numeration starts from 0.")
+    show_parser.add_argument("--from_col", "-fc", action="append", type=int,
+                             default=DEFAULT_SHOW_FROM_COL,
+                             help="Will display all columns between the given column index andthe one defined by the next 'to_col' value."
+                                  "The given col index is included into the displayed range. "
+                                  "Column numeration starts from 0.")
+    show_parser.add_argument("--to_col", "-tc", action="append", type=int,
+                             default=DEFAULT_SHOW_TO_COL,
+                             help="Will deilsplay all columns between the previously set `from_col` index and the given one. "
+                                  "The given column index is NOT included into the displayed range. "
+                                  "Column numeration starts from 0.")
     show_parser.add_argument("--r_index", "-ri", action="append", type=int,
                              default=DEFAULT_SHOW_ROW_INDEX,
                              help="Exact index of row which will be displayed. "
