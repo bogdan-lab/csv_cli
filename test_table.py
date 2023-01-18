@@ -61,8 +61,8 @@ def create_default_sort_args() -> Namespace:
 def create_default_show_args() -> Namespace:
     args = merge_args(create_default_file_params(),
                       create_default_column_selector())
-    args.head = table.DEFAULT_SHOW_HEAD_NUMBER
-    args.tail = table.DEFAULT_SHOW_TAIL_NUMBER
+    args.r_head = table.DEFAULT_SHOW_ROW_HEAD_NUMBER
+    args.r_tail = table.DEFAULT_SHOW_ROW_TAIL_NUMBER
     args.from_row = table.DEFAULT_SHOW_FROM_ROW
     args.to_row = table.DEFAULT_SHOW_TO_ROW
     args.r_index = table.DEFAULT_SHOW_ROW_INDEX
@@ -916,22 +916,22 @@ def test_show_table_with_only_head(tmp_path, capsys):
     args = create_default_show_args()
     args.files = [fpath]
 
-    args.head = 0
+    args.r_head = 0
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == header
 
-    args.head = 1
+    args.r_head = 1
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1))
 
-    args.head = 2
+    args.r_head = 2
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2))
 
-    args.head = 20
+    args.r_head = 20
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
@@ -958,22 +958,22 @@ def test_show_table_with_only_head_and_columns(tmp_path, capsys):
     args.delimiter = ";"
     args.c_index = [0, 2]
 
-    args.head = 0
+    args.r_head = 0
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == exp_header
 
-    args.head = 1
+    args.r_head = 1
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1))
 
-    args.head = 2
+    args.r_head = 2
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2))
 
-    args.head = 20
+    args.r_head = 20
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
@@ -992,22 +992,22 @@ def test_show_table_with_only_tail(tmp_path, capsys):
     args = create_default_show_args()
     args.files = [fpath]
 
-    args.tail = 0
+    args.r_tail = 0
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == header
 
-    args.tail = 1
+    args.r_tail = 1
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r5))
 
-    args.tail = 2
+    args.r_tail = 2
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r4, r5))
 
-    args.tail = 20
+    args.r_tail = 20
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
@@ -1034,22 +1034,22 @@ def test_show_table_with_only_tail_and_columns(tmp_path, capsys):
     args.delimiter = ";"
     args.c_index = [2, 0]
 
-    args.tail = 0
+    args.r_tail = 0
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == exp_header
 
-    args.tail = 1
+    args.r_tail = 1
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r5))
 
-    args.tail = 2
+    args.r_tail = 2
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r4, exp_r5))
 
-    args.tail = 20
+    args.r_tail = 20
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
@@ -1068,26 +1068,26 @@ def test_show_table_with_head_and_tail(tmp_path, capsys):
     args.files = [fpath]
     args.no_header = True
 
-    args.head = 0
-    args.tail = 0
+    args.r_head = 0
+    args.r_tail = 0
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out == '\n'
 
-    args.head = 1
-    args.tail = 1
+    args.r_head = 1
+    args.r_tail = 1
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r5))
 
-    args.head = 2
-    args.tail = 2
+    args.r_head = 2
+    args.r_tail = 2
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r4, r5))
 
-    args.head = 46
-    args.tail = 20
+    args.r_head = 46
+    args.r_tail = 20
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
@@ -1114,26 +1114,26 @@ def test_show_table_with_only_head_and_tail_and_columns(tmp_path, capsys):
     args.delimiter = ";"
     args.c_index = [0, 2]
 
-    args.head = 0
-    args.tail = 0
+    args.r_head = 0
+    args.r_tail = 0
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == exp_header
 
-    args.head = 1
-    args.tail = 1
+    args.r_head = 1
+    args.r_tail = 1
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r5))
 
-    args.head = 2
-    args.tail = 2
+    args.r_head = 2
+    args.r_tail = 2
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r4, exp_r5))
 
-    args.head = 20
-    args.tail = 20
+    args.r_head = 20
+    args.r_tail = 20
     table.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
@@ -1230,8 +1230,8 @@ def test_show_head_tail_and_ranges(tmp_path, capsys):
     args.delimiter = ';'
 
     # No crossection
-    args.head = 1
-    args.tail = 1
+    args.r_head = 1
+    args.r_tail = 1
     args.from_row = [1, 3]
     args.to_row = [2, 4]
     table.callback_show(args)
@@ -1239,8 +1239,8 @@ def test_show_head_tail_and_ranges(tmp_path, capsys):
     assert out[:-1] == '\n'.join((header, r1, r2, r4, r5))
 
     # With crossection
-    args.head = 3
-    args.tail = 3
+    args.r_head = 3
+    args.r_tail = 3
     args.from_row = [1, 2, 3, 4]
     args.to_row = [4, 3, 5, 5]
     table.callback_show(args)
@@ -1299,8 +1299,8 @@ def test_show_all_row_filters_together(tmp_path, capsys):
     args.delimiter = ';'
 
     # No crossection
-    args.head = 1
-    args.tail = 1
+    args.r_head = 1
+    args.r_tail = 1
     args.from_row = [1]
     args.to_row = [2]
     args.r_index = [3]
@@ -1309,8 +1309,8 @@ def test_show_all_row_filters_together(tmp_path, capsys):
     assert out[:-1] == '\n'.join((header, r1, r2, r4, r5))
 
     # With crossection
-    args.head = 2
-    args.tail = 2
+    args.r_head = 2
+    args.r_tail = 2
     args.from_row = [1, 2]
     args.to_row = [3, 5]
     args.r_index = [1, 3, 4]

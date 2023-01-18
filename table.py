@@ -24,8 +24,8 @@ DEFAULT_COLUMN_INDEX_LIST = None
 DEFAULT_INPLACE_ACTION = "store_true"
 DEFAULT_COLUMN_TYPE_LIST = None
 DEFAULT_SORT_REVERSE_ACTION = "store_true"
-DEFAULT_SHOW_HEAD_NUMBER = None
-DEFAULT_SHOW_TAIL_NUMBER = None
+DEFAULT_SHOW_ROW_HEAD_NUMBER = None
+DEFAULT_SHOW_ROW_TAIL_NUMBER = None
 DEFAULT_SHOW_FROM_ROW = None
 DEFAULT_SHOW_TO_ROW = None
 DEFAULT_SHOW_ROW_INDEX = None
@@ -171,10 +171,10 @@ def check_arguments_show(args) -> None:
     if args.c_name is not None and args.no_header:
         raise ValueError(
             "You cannot select column by name if there is no header")
-    if args.head is not None and args.head < 0:
-        raise ValueError("head value cannot be negative")
-    if args.tail is not None and args.tail < 0:
-        raise ValueError("tail value cannot be negative")
+    if args.r_head is not None and args.r_head < 0:
+        raise ValueError("Row head value cannot be negative")
+    if args.r_tail is not None and args.r_tail < 0:
+        raise ValueError("Row tail value cannot be negative")
     has_row_ranges = args.from_row is not None and args.to_row is not None
     has_not_defined_edge = (args.from_row and not args.to_row) or (
         args.to_row and not args.from_row)
@@ -285,8 +285,8 @@ def callback_show(args):
         if not no_columns_set:
             col_index = get_col_indexes(args.c_index, file_data.header,
                                         args.c_name, args.delimiter)
-        row_indexes = get_row_indexes(len(file_data.content), args.head,
-                                      args.tail, args.from_row, args.to_row,
+        row_indexes = get_row_indexes(len(file_data.content), args.r_head,
+                                      args.r_tail, args.from_row, args.to_row,
                                       args.r_index)
         file_data = apply_show(file_data, row_indexes,
                                col_index, args.delimiter, args.hide_header)
@@ -335,9 +335,9 @@ def setup_parser(parser):
     show_parser = subparsers.add_parser("show", parents=[file_params, column_selector],
                                         help="Allows to selectively show table content",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    show_parser.add_argument("--head", action="store", type=int, default=DEFAULT_SHOW_HEAD_NUMBER,
+    show_parser.add_argument("--r_head", action="store", type=int, default=DEFAULT_SHOW_ROW_HEAD_NUMBER,
                              help="Will display given number of top rows in the table")
-    show_parser.add_argument("--tail", action="store", type=int, default=DEFAULT_SHOW_TAIL_NUMBER,
+    show_parser.add_argument("--r_tail", action="store", type=int, default=DEFAULT_SHOW_ROW_TAIL_NUMBER,
                              help="Will display given number of bottom rows in the table")
     show_parser.add_argument("--from_row", "-fr", action="append", type=int,
                              default=DEFAULT_SHOW_FROM_ROW,
