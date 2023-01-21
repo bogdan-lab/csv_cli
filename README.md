@@ -116,67 +116,38 @@ definetely not a number; num
 Note that relative order of rows with not convertible values is preserved.
 
 ## Show utility
-This utility allows to selectively display a table content.
-Using this utility one can select different number of rows and columns which will be then printed to the stdout.
-The interface for selecting certain columns from the table is similar to the one in `sort` sub-command.
-If no particular columns were selected for displaying, all columns will be displayed.
-Here are few examples:
 
-Let `test.csv` content be the following
-```
-Date;String;Int;Double
-2010-01-04;two;1;5.0
-2011-05-23;one;2;4.5
-2008-03-12;two;-14;3.7
-2016-12-07;one;-4;0.1
-```
-The command:
-```
-python3 table.py show -d ';' -ci 2 -ci 0 -f test.csv
-```
-Where,
-- `-d` defines column delimiter in file
-- `-ci` defines column index in the table, starts from 0. Note that one can pass column names if the header is present in the table.
-- `-f` path to the table file
+This utility allows to selectively display certain column and rows from the table.
+It will not modify the existing table in any way.
+In order make the output handy, utility will display updated header (if one exists) by default for any kind of selection.
 
-The result of the command will be
-```
-Int;Date
-1;2010-01-04
-2;2011-05-23
--14;2008-03-12
--4;2016-12-07
-```
-Note that, the column order in the result is the order in which they were named in the command and not the order in which they are saved in the table.
+### Show selected columns
+In order to select columns from the table user has to provide the correct column delimiter.
+Also if one expects the utility to process the table header correctly one has to keep `--no_header` flag value valid.
+There are three ways to select columns which are needed to be displayed:
 
-Show utility support selection by rows (by itself and combined with column selection).
-There are options `head` and `tail` which allow to display given number of first or last rows in the table.
-Note that these commands can be combined, thus if one sets both `head` and `tail` values, the corresponding union of rows will be displayed.
+1. User can select the number of first or last columns to display using arguments `-c_head` and `-c_tail` respectively.
+The first columns are calculated from the leftmost column and last - from the rightmost.
+2. User can select the range of columns.
+It can be done using arguments `--from_col` (`-fc`) and `--to_col` (`-tc`).
+The first argument sets the index of the first column in the range.
+This column will be included.
+The second argument sets the column index which corresponds to the end of the range and which will be excluded.
+Note that column numeration starts from `0`.
+User can set several ranges by defining them one after another in the command line 
+(`.... -fc 3 -tc 10 -fc 20 -tc 40 ....`)
+3. User can select particular columns to be displayed. 
+This can be done by arguments `-c_name`(`-cn`) and `-c_index`(`-ci`).
+The first argument allows to select columns by name, when the secnd one defines indexes of columns which will be displayed.
+One can mix these arguments and use each of them several times in order to select several columns.
+Column indexing starts from `0`.
 
-For example, let `test.csv` content be the following
-```
-Date;String;Int;Double
-2010-01-04;two;1;5.0
-2011-05-23;one;2;4.5
-2008-03-12;two;-14;3.7
-2016-12-07;one;-4;0.1
-```
-The command:
-```
-python3 table.py show -d ';' -ci 2 -ci 0 --head 1 --tail 1 -f test.csv
-```
-The result of the command will be
-```
-Int;Date
-1;2010-01-04
--4;2016-12-07
-```
+User can mix all three ways for selecting columns in one queue, the utility will guarantee that even if defined ranges intersect each column will be displayed only once.
+If one does not set any restriction for column selection - all columns will be displayed.
+The order of all selected columns will be the same as it is in the original table.
 
-One can also chose certain ranges of rows to be displayed.
-It can be done by options `-from_row` (or `-fr`) and `-to_row` (or `tr`).
-One can set several ranges at the same time (including options `-head` and `-tail`) and as the output user will obtain a union of all set ranges.
-
-For example, let `test.csv` content be the following:
+Let's look at few examples.
+Let `test.csv` content be the following:
 ```
 Date;String;Int;Double
 2010-01-04;two;1;5.0
@@ -187,16 +158,132 @@ Date;String;Int;Double
 2011-07-11;world;3;2.56
 2001-04-28;!;3;13.2
 ```
-The command:
+Then the following commands will have results listed below
 ```
-python3 table.py show -fr 1 -tr 3 -fr 4 -tr 6 -f test.csv
+python3 table.py show --c_head 1 --c_tail 1 -d ';' -f test.csv
 ```
-Where the first pair of arguments `-fr` and `-tr` defines the first row range `[1, 3)` and the second pair of these arguments defines the second range `[3, 6)`.
-Since row numeration start from 0 and header is not taken into account the result of the command will be
+```
+Date;Double
+2010-01-04;5.0
+2011-05-23;4.5
+2008-03-12;3.7
+2016-12-07;0.1
+2010-01-01;9.8
+2011-07-11;2.56
+2001-04-28;13.2
+```
+```
+python3 table.py show -fc 1 -tc 3 -d ';' -f test.csv
+```
+```
+String;Int
+two;1
+one;2
+two;-14
+one;-4
+hello;2
+world;3
+!;3
+```
+```
+python3 table.py show --c_head 1 -cn Int -d ';' -f test.csv
+```
+```
+Date;Int
+2010-01-04;1
+2011-05-23;2
+2008-03-12;-14
+2016-12-07;-4
+2010-01-01;2
+2011-07-11;3
+2001-04-28;3
+```
+
+### Show selected rows
+Similarly to the column interface user can select rows which will be displayed.
+Note that if table has header (and `--no_header` flag is set correctly) then header will not take part in row selection process and it will be present in all outputs, unless user requests to hide it, using `--hide_header`.
+There are also three ways to select rows which will be displayed:
+
+1. User can select the number of top and bottom rows to display using arguments `-r_head` and `-c_tail`.
+Note that header, if one exists, will not be considered as a row.
+2.User can select the of rows.
+It can be done using arguments `--from_row` (`-fr`) and `--to_row` (`-tr`).
+The first argument sets the index of the first row in the range, which will be included in the output.
+The second argument defines the last row index in the range.
+The row with this index will not be included into the range.
+Index of the first row (beneath the header, if one exists) is `0`.
+User can set several ranges by defining them one after another in the command line 
+(`... -fr 1 -tr 5 -fr 10 -tr 15 ...`)
+3.User can select particular rows by their indexes.
+It can be done, using argument `--r_index` (`-ri`).
+One also can select several rows using this argument repeatedly.
+
+User can mix all three ways for selecting rows in one call utility will display union of defined ranges.
+If user does not set any restriction for row selection - all rows will be selected and displayed.
+
+Let's look at few examples
+Again, let `test.csv` content be the following:
+```
+Date;String;Int;Double
+2010-01-04;two;1;5.0
+2011-05-23;one;2;4.5
+2008-03-12;two;-14;3.7
+2016-12-07;one;-4;0.1
+2010-01-01;hello;2;9.8
+2011-07-11;world;3;2.56
+2001-04-28;!;3;13.2
+```
+Then the following commands will have results listed below
+```
+python3 table.py show --r_head 1 --r_tail 1 -d ';' -f test.csv
+```
+```
+Date;String;Int;Double
+2010-01-04;two;1;5.0
+2001-04-28;!;3;13.2
+```
+```
+python3 table.py show -fr 2 -tr 4 -d ';' -f test.csv
+```
+```
+Date;String;Int;Double
+2008-03-12;two;-14;3.7
+2016-12-07;one;-4;0.1
+```
+```
+python3 table.py show -ri 1 -ri 3 -ri 5 -d ';' -f test.csv
+```
 ```
 Date;String;Int;Double
 2011-05-23;one;2;4.5
+2016-12-07;one;-4;0.1
+2011-07-11;world;3;2.56
+```
+
+User can mix row and column selections in a single call in order to minimize his focus area when studying the table.
+Also, there is a invertion flag `--except`.
+If this flag is set to `true` utility will display all rows and columns in the table which DO NOT sutisfy selection requirements in the call.
+For example, `test.csv` content:
+```
+Date;String;Int;Double
+2010-01-04;two;1;5.0
+2011-05-23;one;2;4.5
 2008-03-12;two;-14;3.7
+2016-12-07;one;-4;0.1
 2010-01-01;hello;2;9.8
 2011-07-11;world;3;2.56
+2001-04-28;!;3;13.2
+```
+Then selecting everythin except the middle column and the middle row will look like this:
+```
+python3 table.py show --except -cn String -ri 3 -d ';' -f test.csv
+```
+```
+Date;Int;Double
+2010-01-04;1;5.0
+2011-05-23;2;4.5
+2008-03-12;-14;3.7
+2010-01-01;2;9.8
+2011-07-11;3;2.56
+2001-04-28;3;13.2
 ```
