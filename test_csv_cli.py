@@ -1,4 +1,4 @@
-import table
+import csv_cli
 from argparse import Namespace
 import datetime
 from pathlib import Path
@@ -20,23 +20,23 @@ def convert_argparser_action_to_bool(action: str) -> bool:
 
 def create_default_file_params() -> Namespace():
     args = Namespace()
-    args.delimiter = table.DEFAULT_TABLE_DELIMITER
+    args.delimiter = csv_cli.DEFAULT_TABLE_DELIMITER
     args.no_header = convert_argparser_action_to_bool(
-        table.DEFAULT_NO_HEADER_ACTION)
+        csv_cli.DEFAULT_NO_HEADER_ACTION)
     return args
 
 
 def create_default_column_selector() -> Namespace():
     args = Namespace()
-    args.c_name = table.DEFAULT_COLUMN_NAME_LIST
-    args.c_index = table.DEFAULT_COLUMN_INDEX_LIST
+    args.c_name = csv_cli.DEFAULT_COLUMN_NAME_LIST
+    args.c_index = csv_cli.DEFAULT_COLUMN_INDEX_LIST
     return args
 
 
 def create_default_inplace_argument() -> Namespace:
     args = Namespace()
     args.inplace = convert_argparser_action_to_bool(
-        table.DEFAULT_INPLACE_ACTION)
+        csv_cli.DEFAULT_INPLACE_ACTION)
     return args
 
 
@@ -51,56 +51,56 @@ def create_default_sort_args() -> Namespace:
     args = merge_args(create_default_file_params(),
                       create_default_column_selector(),
                       create_default_inplace_argument())
-    args.c_type = table.DEFAULT_COLUMN_TYPE_LIST
-    args.time_fmt = table.DEFAULT_TIME_FORMAT
+    args.c_type = csv_cli.DEFAULT_COLUMN_TYPE_LIST
+    args.time_fmt = csv_cli.DEFAULT_TIME_FORMAT
     args.reverse = convert_argparser_action_to_bool(
-        table.DEFAULT_SORT_REVERSE_ACTION)
+        csv_cli.DEFAULT_SORT_REVERSE_ACTION)
     return args
 
 
 def create_default_show_args() -> Namespace:
     args = merge_args(create_default_file_params(),
                       create_default_column_selector())
-    args.r_head = table.DEFAULT_SHOW_ROW_HEAD_NUMBER
-    args.r_tail = table.DEFAULT_SHOW_ROW_TAIL_NUMBER
-    args.c_head = table.DEFAULT_SHOW_COL_HEAD_NUMBER
-    args.c_tail = table.DEFAULT_SHOW_COL_TAIL_NUMBER
-    args.from_row = table.DEFAULT_SHOW_FROM_ROW
-    args.to_row = table.DEFAULT_SHOW_TO_ROW
-    args.from_col = table.DEFAULT_SHOW_FROM_COL
-    args.to_col = table.DEFAULT_SHOW_TO_COL
-    args.r_index = table.DEFAULT_SHOW_ROW_INDEX
+    args.r_head = csv_cli.DEFAULT_SHOW_ROW_HEAD_NUMBER
+    args.r_tail = csv_cli.DEFAULT_SHOW_ROW_TAIL_NUMBER
+    args.c_head = csv_cli.DEFAULT_SHOW_COL_HEAD_NUMBER
+    args.c_tail = csv_cli.DEFAULT_SHOW_COL_TAIL_NUMBER
+    args.from_row = csv_cli.DEFAULT_SHOW_FROM_ROW
+    args.to_row = csv_cli.DEFAULT_SHOW_TO_ROW
+    args.from_col = csv_cli.DEFAULT_SHOW_FROM_COL
+    args.to_col = csv_cli.DEFAULT_SHOW_TO_COL
+    args.r_index = csv_cli.DEFAULT_SHOW_ROW_INDEX
     args.hide_header = convert_argparser_action_to_bool(
-        table.DEFAULT_SHOW_HIDE_HEADER_ACTION)
+        csv_cli.DEFAULT_SHOW_HIDE_HEADER_ACTION)
     args.except_flag = convert_argparser_action_to_bool(
-        table.DEFAULT_SHOW_EXCEPT_ACTION)
+        csv_cli.DEFAULT_SHOW_EXCEPT_ACTION)
     return args
 
 
 def test_get_col_index():
     header = "One;TwO;THREE"
-    assert table.get_col_indexes(None, header, ["TWO"], ";") == [1]
-    assert table.get_col_indexes(None, header, ["one"], ";") == [0]
-    assert table.get_col_indexes(None, header, ["Three"], ";") == [2]
-    assert table.get_col_indexes(None, header, ["one", 'three'], ";") == [0, 2]
+    assert csv_cli.get_col_indexes(None, header, ["TWO"], ";") == [1]
+    assert csv_cli.get_col_indexes(None, header, ["one"], ";") == [0]
+    assert csv_cli.get_col_indexes(None, header, ["Three"], ";") == [2]
+    assert csv_cli.get_col_indexes(None, header, ["one", 'three'], ";") == [0, 2]
 
     header = " \t one, \t two  , three  \t   "
-    assert table.get_col_indexes(None, header, ["TWO"], ",") == [1]
-    assert table.get_col_indexes(None, header, ["one"], ",") == [0]
-    assert table.get_col_indexes(None, header, ["Three"], ",") == [2]
-    assert table.get_col_indexes(None, header, ["one", 'three'], ",") == [0, 2]
+    assert csv_cli.get_col_indexes(None, header, ["TWO"], ",") == [1]
+    assert csv_cli.get_col_indexes(None, header, ["one"], ",") == [0]
+    assert csv_cli.get_col_indexes(None, header, ["Three"], ",") == [2]
+    assert csv_cli.get_col_indexes(None, header, ["one", 'three'], ",") == [0, 2]
 
 
 def test_sort_content_numbers():
     header = "One;Two;Three"
-    test_file = table.FileContent(header, ("5;6;7", "1;2;3", "4;2;0"))
-    res_file = table.sort_content(test_file, col_indexes=[0],
+    test_file = csv_cli.FileContent(header, ("5;6;7", "1;2;3", "4;2;0"))
+    res_file = csv_cli.sort_content(test_file, col_indexes=[0],
                                   col_types=["number"], delimiter=';',
                                   rev_order=False, time_fmt="")
     assert res_file.header == header
     assert res_file.content == ("1;2;3", "4;2;0", "5;6;7")
 
-    res_file = table.sort_content(test_file, col_indexes=[2],
+    res_file = csv_cli.sort_content(test_file, col_indexes=[2],
                                   col_types=["number"], delimiter=';',
                                   rev_order=True, time_fmt="")
     assert res_file.header == header
@@ -109,8 +109,8 @@ def test_sort_content_numbers():
 
 def test_sort_content_strings():
     header = "One;Two;Three"
-    test_file = table.FileContent(header, ("d,  f  ,g", "a,  b  ,c", "w,x,z"))
-    res_file = table.sort_content(test_file, col_indexes=[1],
+    test_file = csv_cli.FileContent(header, ("d,  f  ,g", "a,  b  ,c", "w,x,z"))
+    res_file = csv_cli.sort_content(test_file, col_indexes=[1],
                                   col_types=["string"], delimiter=',',
                                   rev_order=False, time_fmt="")
     assert res_file.header == header
@@ -118,21 +118,21 @@ def test_sort_content_strings():
 
 
 def test_convert_to_text():
-    test = table.FileContent(None, [])  # empty file
-    assert len(table.convert_to_text(test)) == 0
-    test = table.FileContent('header', [])  # with header but no content
-    assert table.convert_to_text(test) == 'header'
+    test = csv_cli.FileContent(None, [])  # empty file
+    assert len(csv_cli.convert_to_text(test)) == 0
+    test = csv_cli.FileContent('header', [])  # with header but no content
+    assert csv_cli.convert_to_text(test) == 'header'
     # no header with content
-    test = table.FileContent(None, ['one', 'two', 'three'])
-    assert table.convert_to_text(test) == 'one\ntwo\nthree'
-    test = table.FileContent('header', ['one'])  # with header and content
-    assert table.convert_to_text(test) == 'header\none'
+    test = csv_cli.FileContent(None, ['one', 'two', 'three'])
+    assert csv_cli.convert_to_text(test) == 'one\ntwo\nthree'
+    test = csv_cli.FileContent('header', ['one'])  # with header and content
+    assert csv_cli.convert_to_text(test) == 'header\none'
 
 
 def test_comparator():
-    sorter = table.RowSorter(col_indexes=[2, 0, 4],
+    sorter = csv_cli.RowSorter(col_indexes=[2, 0, 4],
                              col_types=['string', 'number', 'time'],
-                             delimiter=",", time_fmt=table.DEFAULT_TIME_FORMAT)
+                             delimiter=",", time_fmt=csv_cli.DEFAULT_TIME_FORMAT)
     res = sorter.comparator("1, 3.14, abcd , 0, 2010-01-01 13:48:32")
     assert len(res) == 3
     assert res[0] == "abcd"
@@ -151,7 +151,7 @@ def test_sort_empty_file(tmp_path):
     args.c_type = ['string']
     args.inplace = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.readlines()
     assert len(data) == 0
@@ -168,7 +168,7 @@ def test_header_only_file(tmp_path):
     args.c_type = ['string']
     args.inplace = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == header
@@ -190,7 +190,7 @@ def test_sort_file_by_one_column_1(tmp_path):
     args.c_type = ['number']
     args.inplace = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((r1, r2, r3, r4, r5))
@@ -213,7 +213,7 @@ def test_sort_file_by_one_column_2(tmp_path):
     args.inplace = True
     args.reverse = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r5, r4, r3, r2, r1))
@@ -236,7 +236,7 @@ def test_sort_file_by_one_column_3(tmp_path):
     args.c_type = ['time']
     args.inplace = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r2, r4, r1, r5, r3))
@@ -261,7 +261,7 @@ def test_sort_file_by_one_column_4(tmp_path):
     args.reverse = True
     args.time_fmt = "%Y_%m_%d"
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r3, r5, r1, r4, r2))
@@ -287,19 +287,19 @@ def test_sort_file_without_modification(tmp_path):
     args.inplace = True
     args.time_fmt = "%Y_%m_%d"
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r1, r2, r3, r4, r5, r6))
     # sort according to the second column
     args.c_name = ["two"]
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r1, r2, r3, r4, r5, r6))
     # sort according to the last column
     args.c_name = ["three"]
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r1, r2, r3, r4, r5, r6))
@@ -322,7 +322,7 @@ def test_sort_according_to_several_columns(tmp_path):
     args.inplace = True
     args.reverse = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r3, r5, r4, r2, r1))
@@ -335,28 +335,28 @@ def test_check_arguments_sort():
     args = create_default_sort_args()
     args.c_index = [1]
 
-    table.check_arguments(args)
+    csv_cli.check_arguments(args)
     assert len(args.c_type) == len(args.c_index)
-    assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)
+    assert all(el == csv_cli.ColumnType.NUMBER.value for el in args.c_type)
 
     args.c_index = [5, 4, 3]
     args.c_type = []
-    table.check_arguments(args)
+    csv_cli.check_arguments(args)
     assert len(args.c_type) == len(args.c_index)
-    assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)
+    assert all(el == csv_cli.ColumnType.NUMBER.value for el in args.c_type)
 
     args.c_index = None
     args.c_name = ["one"]
     args.c_type = None
-    table.check_arguments(args)
+    csv_cli.check_arguments(args)
     assert len(args.c_type) == len(args.c_name)
-    assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)
+    assert all(el == csv_cli.ColumnType.NUMBER.value for el in args.c_type)
 
     args.c_name = ["one", "two"]
     args.c_type = []
-    table.check_arguments(args)
+    csv_cli.check_arguments(args)
     assert len(args.c_type) == len(args.c_name)
-    assert all(el == table.ColumnType.NUMBER.value for el in args.c_type)
+    assert all(el == csv_cli.ColumnType.NUMBER.value for el in args.c_type)
 
 
 def test_sort_according_to_the_column_with_nan(tmp_path):
@@ -374,7 +374,7 @@ def test_sort_according_to_the_column_with_nan(tmp_path):
     args.c_index = [0]
     args.c_type = ["number"]
     args.inplace = True
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
 
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -399,7 +399,7 @@ def test_sort_when_convertion_fails_1(tmp_path):
     args.c_type = ["number"]
     args.inplace = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
 
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -425,7 +425,7 @@ def test_sort_when_convertion_fails_2(tmp_path):
     args.inplace = True
     args.time_fmt = "%Y-%m-%d"
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
 
     with open(fpath, 'r') as fin:
         data = fin.read()
@@ -449,7 +449,7 @@ def test_sort_by_string_with_empty_strings(tmp_path):
     args.c_type = ['string']
     args.inplace = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
     assert data == '\n'.join((header, r3, r5, r2, r1, r4))
@@ -467,7 +467,7 @@ def test_sort_single_number_column(tmp_path):
     args.c_type = ["number"]
     args.inplace = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
 
@@ -487,7 +487,7 @@ def test_sort_single_string_column(tmp_path):
     args.inplace = True
     args.reverse = True
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
 
@@ -506,7 +506,7 @@ def test_sort_single_time_column(tmp_path):
     args.inplace = True
     args.time_fmt = "%Y-%m-%d"
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
 
@@ -532,7 +532,7 @@ def test_sort_stability_when_multiple_sort(tmp_path):
     args.reverse = True
     args.time_fmt = "%Y-%m-%d"
 
-    table.callback_sort(args)
+    csv_cli.callback_sort(args)
     with open(fpath, 'r') as fin:
         data = fin.read()
 
@@ -540,16 +540,16 @@ def test_sort_stability_when_multiple_sort(tmp_path):
 
 
 def test_select_from_row():
-    assert table.select_from_row("1;2;3;4;5", ";", [0, 2, 4]) == "1;3;5"
-    assert table.select_from_row(
+    assert csv_cli.select_from_row("1;2;3;4;5", ";", [0, 2, 4]) == "1;3;5"
+    assert csv_cli.select_from_row(
         "1;2;3;4;5", ";", [0, 1, 2, 3, 4]) == "1;2;3;4;5"
-    assert table.select_from_row("1;2;3;4;5", ";", [1, 3]) == "2;4"
-    assert table.select_from_row("1;2;3;4;5", ";", [1]) == "2"
-    assert table.select_from_row("1;2;3;4;5", ",", [0]) == "1;2;3;4;5"
-    assert table.select_from_row("1,2,3,4,5", ",", [4]) == "5"
-    assert table.select_from_row("onetwoonethree", "one", [
+    assert csv_cli.select_from_row("1;2;3;4;5", ";", [1, 3]) == "2;4"
+    assert csv_cli.select_from_row("1;2;3;4;5", ";", [1]) == "2"
+    assert csv_cli.select_from_row("1;2;3;4;5", ",", [0]) == "1;2;3;4;5"
+    assert csv_cli.select_from_row("1,2,3,4,5", ",", [4]) == "5"
+    assert csv_cli.select_from_row("onetwoonethree", "one", [
                                  1, 2]) == "twoonethree"
-    assert table.select_from_row("1;2;3;4;5", ";", []) == ""
+    assert csv_cli.select_from_row("1;2;3;4;5", ";", []) == ""
 
 
 def test_show_single_column_with_header(tmp_path, capsys):
@@ -565,7 +565,7 @@ def test_show_single_column_with_header(tmp_path, capsys):
     args.files = [fpath]
     args.c_name = ["Date"]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -590,7 +590,7 @@ def test_show_single_column_no_header(tmp_path, capsys):
     args.files = [fpath]
     args.c_index = [3]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -613,7 +613,7 @@ def test_show_all_columns_when_none_is_given(tmp_path, capsys):
     args.delimiter = ";"
     args.files = [fpath]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -634,7 +634,7 @@ def test_show_few_columns(tmp_path, capsys):
     args.files = [fpath]
     args.c_name = ["Date", "Int"]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -660,7 +660,7 @@ def test_show_few_columns_in_different_order(tmp_path, capsys):
     args.files = [fpath]
     args.c_name = ["Int", "Date"]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -686,7 +686,7 @@ def test_show_few_columns_without_modifying_spaces(tmp_path, capsys):
     args.files = [fpath]
     args.c_index = [0, 1, 2]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
 
     out = capsys.readouterr().out
 
@@ -707,13 +707,13 @@ def test_show_from_empty_file_all(tmp_path, capsys):
     args.delimiter = ";"
     args.files = [fpath]
     args.no_header = True
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out == "\n"
 
     # Show file with empty header
     args.no_header = False
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out == '\n'
 
@@ -727,7 +727,7 @@ def test_show_from_file_with_header_only(tmp_path, capsys):
     args.files = [fpath]
     args.c_index = [0, 2]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
 
     out = capsys.readouterr().out
     assert out[:-1] == "one,three"
@@ -743,7 +743,7 @@ def test_show_from_single_row_no_header(tmp_path, capsys):
     args.no_header = True
     args.c_index = [2]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
 
     assert out[:-1] == "three"
@@ -761,171 +761,171 @@ def test_show_entire_table_with_default_parameters(tmp_path, capsys):
     args = create_default_show_args()
     args.files = [fpath]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
 
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
     # Same test but without header
     fpath = create_file(tmp_path/"test.csv", (r1, r2, r3, r4, r5))
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
 
 
 def test_get_row_indexes():
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=None, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == [0, 1, 2, 3, 4]
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=0, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == []
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=None, tail=0,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == []
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=0, tail=0,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == []
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=3, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == [0, 1, 2]
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=None, tail=3,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == [2, 3, 4]
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=1, tail=1,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == [0, 4]
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=3, tail=3,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == [0, 1, 2, 3, 4]
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=30, tail=30,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == [0, 1, 2, 3, 4]
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=10, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == [0, 1, 2, 3, 4]
 
-    res = table.get_row_indexes(total_row_count=5,
+    res = csv_cli.get_row_indexes(total_row_count=5,
                                 head=None, tail=50,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == [0, 1, 2, 3, 4]
 
-    res = table.get_row_indexes(total_row_count=0,
+    res = csv_cli.get_row_indexes(total_row_count=0,
                                 head=None, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == []
 
-    res = table.get_row_indexes(total_row_count=0,
+    res = csv_cli.get_row_indexes(total_row_count=0,
                                 head=5, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == []
 
-    res = table.get_row_indexes(total_row_count=0,
+    res = csv_cli.get_row_indexes(total_row_count=0,
                                 head=None, tail=10,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == []
 
-    res = table.get_row_indexes(total_row_count=0,
+    res = csv_cli.get_row_indexes(total_row_count=0,
                                 head=25, tail=10,
                                 from_index=None, to_index=None,
                                 r_index=None)
     assert res == []
 
-    res = table.get_row_indexes(total_row_count=0,
+    res = csv_cli.get_row_indexes(total_row_count=0,
                                 head=None, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=[1, 2, 3, 4, 5])
     assert res == []
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=None, tail=None,
                                 from_index=[1, 3], to_index=[2, 4],
                                 r_index=None)
     assert res == [1, 3]
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=None, tail=None,
                                 from_index=[1, 1, 1, 3, 3],
                                 to_index=[2, 2, 2, 4, 4],
                                 r_index=None)
     assert res == [1, 3]
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=None, tail=None,
                                 from_index=[0, 1, 3], to_index=[1, 3, 6],
                                 r_index=None)
     assert res == [0, 1, 2, 3, 4, 5]
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=4, tail=2,
                                 from_index=[1, 3], to_index=[2, 4],
                                 r_index=None)
     assert res == [0, 1, 2, 3, 4, 5]
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=None, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=[1, 3, 4, 5])
     assert res == [1, 3, 4, 5]
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=None, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=[1, 1, 1, 1, 1, 1])
     assert res == [1]
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=None, tail=None,
                                 from_index=None, to_index=None,
                                 r_index=[1000])
     assert res == []
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=1, tail=1,
                                 from_index=None, to_index=None,
                                 r_index=[2])
     assert res == [0, 2, 5]
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=1, tail=1,
                                 from_index=[1], to_index=[4],
                                 r_index=[2, 3, 5])
     assert res == [0, 1, 2, 3, 5]
 
-    res = table.get_row_indexes(total_row_count=6,
+    res = csv_cli.get_row_indexes(total_row_count=6,
                                 head=1, tail=1,
                                 from_index=[1, 1, 1], to_index=[4, 4, 4],
                                 r_index=[2, 2, 3, 3, 3, 5, 5])
@@ -945,22 +945,22 @@ def test_show_table_with_only_head(tmp_path, capsys):
     args.files = [fpath]
 
     args.r_head = 0
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == header
 
     args.r_head = 1
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1))
 
     args.r_head = 2
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2))
 
     args.r_head = 20
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
 
@@ -987,22 +987,22 @@ def test_show_table_with_only_head_and_columns(tmp_path, capsys):
     args.c_index = [0, 2]
 
     args.r_head = 0
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == exp_header
 
     args.r_head = 1
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1))
 
     args.r_head = 2
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2))
 
     args.r_head = 20
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5))
@@ -1021,22 +1021,22 @@ def test_show_table_with_only_tail(tmp_path, capsys):
     args.files = [fpath]
 
     args.r_tail = 0
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == header
 
     args.r_tail = 1
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r5))
 
     args.r_tail = 2
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r4, r5))
 
     args.r_tail = 20
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
 
@@ -1063,22 +1063,22 @@ def test_show_table_with_only_tail_and_columns(tmp_path, capsys):
     args.c_index = [2, 0]
 
     args.r_tail = 0
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == exp_header
 
     args.r_tail = 1
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r5))
 
     args.r_tail = 2
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r4, exp_r5))
 
     args.r_tail = 20
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5))
@@ -1098,25 +1098,25 @@ def test_show_table_with_head_and_tail(tmp_path, capsys):
 
     args.r_head = 0
     args.r_tail = 0
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out == '\n'
 
     args.r_head = 1
     args.r_tail = 1
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r5))
 
     args.r_head = 2
     args.r_tail = 2
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r4, r5))
 
     args.r_head = 46
     args.r_tail = 20
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
 
@@ -1144,39 +1144,39 @@ def test_show_table_with_only_head_and_tail_and_columns(tmp_path, capsys):
 
     args.r_head = 0
     args.r_tail = 0
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == exp_header
 
     args.r_head = 1
     args.r_tail = 1
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r5))
 
     args.r_head = 2
     args.r_tail = 2
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2, exp_r4, exp_r5))
 
     args.r_head = 20
     args.r_tail = 20
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5))
 
 
 def test_expand_int_ranges():
-    assert table.expand_int_ranges([(1, 2), (4, 6)]) == [1, 4, 5]
-    assert table.expand_int_ranges([(1, 2)]) == [1]
-    assert table.expand_int_ranges([(1, 1)]) == []
-    assert table.expand_int_ranges([(1, 1), (1, 1), (1, 1)]) == []
-    assert table.expand_int_ranges([(1, 1), (2, 3), (3, 3)]) == [2]
-    assert table.expand_int_ranges([(1, 5)]) == [1, 2, 3, 4]
-    assert table.expand_int_ranges([(1, 5), (2, 7)]) == [1, 2, 3, 4, 5, 6]
-    assert table.expand_int_ranges([(1, 5), (2, 7), (3, 6)]) == [
+    assert csv_cli.expand_int_ranges([(1, 2), (4, 6)]) == [1, 4, 5]
+    assert csv_cli.expand_int_ranges([(1, 2)]) == [1]
+    assert csv_cli.expand_int_ranges([(1, 1)]) == []
+    assert csv_cli.expand_int_ranges([(1, 1), (1, 1), (1, 1)]) == []
+    assert csv_cli.expand_int_ranges([(1, 1), (2, 3), (3, 3)]) == [2]
+    assert csv_cli.expand_int_ranges([(1, 5)]) == [1, 2, 3, 4]
+    assert csv_cli.expand_int_ranges([(1, 5), (2, 7)]) == [1, 2, 3, 4, 5, 6]
+    assert csv_cli.expand_int_ranges([(1, 5), (2, 7), (3, 6)]) == [
         1, 2, 3, 4, 5, 6]
 
 
@@ -1195,37 +1195,37 @@ def test_show_table_row_range_only(tmp_path, capsys):
 
     args.from_row = [0]
     args.to_row = [0]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == header
 
     args.from_row = [100]
     args.to_row = [100]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == header
 
     args.from_row = [0, 2, 4]
     args.to_row = [1, 3, 5]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r3, r5))
 
     args.from_row = [0, 2]
     args.to_row = [4, 5]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
 
     args.from_row = [0]
     args.to_row = [5]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
 
     args.from_row = [0]
     args.to_row = [50]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
 
@@ -1239,7 +1239,7 @@ def test_show_table_row_range_only(tmp_path, capsys):
     args.c_index = [2, 0]
     args.from_row = [1]
     args.to_row = [4]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r2, exp_r3, exp_r4))
 
@@ -1262,7 +1262,7 @@ def test_show_head_tail_and_ranges(tmp_path, capsys):
     args.r_tail = 1
     args.from_row = [1, 3]
     args.to_row = [2, 4]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r4, r5))
 
@@ -1271,7 +1271,7 @@ def test_show_head_tail_and_ranges(tmp_path, capsys):
     args.r_tail = 3
     args.from_row = [1, 2, 3, 4]
     args.to_row = [4, 3, 5, 5]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
 
@@ -1290,12 +1290,12 @@ def test_show_specific_rows(tmp_path, capsys):
     args.delimiter = ';'
 
     args.r_index = [0, 2, 4]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r3, r5))
 
     args.r_index = [4, 2, 0]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r3, r5))
 
@@ -1308,7 +1308,7 @@ def test_show_specific_rows(tmp_path, capsys):
     args.c_index = [0, 2]
     args.r_index = [1, 2, 20]
 
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r2, exp_r3))
 
@@ -1332,7 +1332,7 @@ def test_show_all_row_filters_together(tmp_path, capsys):
     args.from_row = [1]
     args.to_row = [2]
     args.r_index = [3]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r4, r5))
 
@@ -1342,7 +1342,7 @@ def test_show_all_row_filters_together(tmp_path, capsys):
     args.from_row = [1, 2]
     args.to_row = [3, 5]
     args.r_index = [1, 3, 4]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3, r4, r5))
 
@@ -1360,7 +1360,7 @@ def test_show_everything_without_header(tmp_path, capsys):
     args.files = [fpath]
     args.delimiter = ';'
     args.hide_header = True
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
 
@@ -1372,7 +1372,7 @@ def test_show_hide_header_whith_no_rows(tmp_path, capsys):
     args = create_default_show_args()
     args.files = [fpath]
     args.hide_header = True
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == ""
 
@@ -1389,7 +1389,7 @@ def test_show_hide_header_ignored_when_no_header_present(tmp_path, capsys):
     args.files = [fpath]
     args.no_header = True
     args.hide_header = True
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
 
@@ -1406,12 +1406,12 @@ def test_show_column_head_and_tail(tmp_path, capsys):
     args.delimiter = ','
 
     args.c_head = 0
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == ""
 
     args.c_tail = 0
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == ""
 
@@ -1419,7 +1419,7 @@ def test_show_column_head_and_tail(tmp_path, capsys):
     exp_r2 = "11,12,13,14"
     exp_r3 = "111,112,113,114"
     args.c_head = 4
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_r1, exp_r2, exp_r3))
 
@@ -1428,7 +1428,7 @@ def test_show_column_head_and_tail(tmp_path, capsys):
     exp_r3 = "116,117,118,119"
     args.c_head = None
     args.c_tail = 4
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_r1, exp_r2, exp_r3))
 
@@ -1437,25 +1437,25 @@ def test_show_column_head_and_tail(tmp_path, capsys):
     exp_r3 = "111,112,119"
     args.c_head = 2
     args.c_tail = 1
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_r1, exp_r2, exp_r3))
 
     args.c_tail = None
     args.c_head = 20
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3))
 
     args.c_head = None
     args.c_tail = 20
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3))
 
     args.c_head = 5
     args.c_tail = 5
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((r1, r2, r3))
 
@@ -1487,7 +1487,7 @@ def test_show_column_head_tail_and_particular(tmp_path, capsys):
     args.c_head = 1
     args.c_tail = 1
     args.c_name = ["three", "four"]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
@@ -1503,14 +1503,14 @@ def test_show_column_head_tail_and_particular(tmp_path, capsys):
     args.c_head = None
     args.c_tail = 2
     args.c_name = ["three", "four"]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
 
     # With some row filter
     args.r_head = 2
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2))
 
@@ -1541,7 +1541,7 @@ def test_show_column_ranges_and_all(tmp_path, capsys):
 
     args.from_col = [0, 2]
     args.to_col = [1, 10]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
@@ -1556,14 +1556,14 @@ def test_show_column_ranges_and_all(tmp_path, capsys):
     exp_r6 = "53,54,55"
     args.from_col = [2, 3]
     args.to_col = [4, 5]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
 
     # With some row filter
     args.r_head = 2
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((exp_header, exp_r1, exp_r2))
 
@@ -1573,7 +1573,7 @@ def test_show_column_ranges_and_all(tmp_path, capsys):
     args.c_tail = 1
     args.from_col = [1]
     args.to_col = [4]
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1], '\n'.join((header, r1, r2, r3, r4, r5, r6))
 
@@ -1589,13 +1589,13 @@ def test_show_except_show_all(tmp_path, capsys):
     args.files = [fpath]
     # Without delimiter
     args.except_flag = True
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == ""
 
     # With delimiter
     args.delimiter = ','
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == ""
 
@@ -1605,7 +1605,7 @@ def test_show_except_show_all(tmp_path, capsys):
 
     args.files = [fpath]
     args.except_flag = True
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == ""
 
@@ -1622,7 +1622,7 @@ def test_show_except_show_nothing(tmp_path, capsys):
     args.r_head = 0
     args.c_head = 0
     args.except_flag = True
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r3))
 
@@ -1633,7 +1633,7 @@ def test_show_except_show_nothing(tmp_path, capsys):
     args.r_head = 0
     args.c_head = 0
     args.except_flag = True
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
     assert out[:-1] == ""
 
@@ -1657,7 +1657,7 @@ def test_show_except_show_selected(tmp_path, capsys):
     args.r_index = [3]
     args.c_index = [0, 2, 4]
     args.except_flag = True
-    table.callback_show(args)
+    csv_cli.callback_show(args)
     out = capsys.readouterr().out
 
     exp_header = "two,four"
