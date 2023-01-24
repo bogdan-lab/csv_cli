@@ -28,7 +28,7 @@ Date;String;Int;Double
 ```
 We can sort table rows with command
 ```
-python3 table.py sort -d ";" --c_index 0 -as time  -t_fmt "%Y-%m-%d" -f test.csv
+./csv sort -d ";" --c_index 0 -as time  -t_fmt "%Y-%m-%d" -f test.csv
 ```
 Where,
 - `-d` defines a delimiter used in the table
@@ -65,7 +65,7 @@ Date;String;Int;Double
 ```
 The command:
 ```
-python3 table.py sort -d ";" --c_name String -as string --c_name Int -as number --reverse -f test.csv
+./csv sort -d ";" --c_name String -as string --c_name Int -as number --reverse -f test.csv
 ```
 Where,
 - `--c_name` refers to the column by its name in header. Note that if there is no header this option is not available.
@@ -97,7 +97,7 @@ definetely not a number; num
 ```
 The command:
 ```
-python3 table.py sort -d ";" --no_header -ci 0 -f test.csv
+./csv sort -d ";" --no_header -ci 0 -f test.csv
 ```
 Where,
 - `--no_header` indicates that table does not have any header
@@ -160,7 +160,7 @@ Date;String;Int;Double
 ```
 Then the following commands will have results listed below
 ```
-python3 table.py show --c_head 1 --c_tail 1 -d ';' -f test.csv
+./csv show --c_head 1 --c_tail 1 -d ';' -f test.csv
 ```
 ```
 Date;Double
@@ -173,7 +173,7 @@ Date;Double
 2001-04-28;13.2
 ```
 ```
-python3 table.py show -fc 1 -tc 3 -d ';' -f test.csv
+./csv show -fc 1 -tc 3 -d ';' -f test.csv
 ```
 ```
 String;Int
@@ -186,7 +186,7 @@ world;3
 !;3
 ```
 ```
-python3 table.py show --c_head 1 -cn Int -d ';' -f test.csv
+./csv show --c_head 1 -cn Int -d ';' -f test.csv
 ```
 ```
 Date;Int
@@ -235,7 +235,7 @@ Date;String;Int;Double
 ```
 Then the following commands will have results listed below
 ```
-python3 table.py show --r_head 1 --r_tail 1 -d ';' -f test.csv
+./csv show --r_head 1 --r_tail 1 -d ';' -f test.csv
 ```
 ```
 Date;String;Int;Double
@@ -243,7 +243,7 @@ Date;String;Int;Double
 2001-04-28;!;3;13.2
 ```
 ```
-python3 table.py show -fr 2 -tr 4 -d ';' -f test.csv
+./csv show -fr 2 -tr 4 -d ';' -f test.csv
 ```
 ```
 Date;String;Int;Double
@@ -251,7 +251,7 @@ Date;String;Int;Double
 2016-12-07;one;-4;0.1
 ```
 ```
-python3 table.py show -ri 1 -ri 3 -ri 5 -d ';' -f test.csv
+./csv show -ri 1 -ri 3 -ri 5 -d ';' -f test.csv
 ```
 ```
 Date;String;Int;Double
@@ -276,7 +276,7 @@ Date;String;Int;Double
 ```
 Then selecting everythin except the middle column and the middle row will look like this:
 ```
-python3 table.py show --except -cn String -ri 3 -d ';' -f test.csv
+./csv show --except -cn String -ri 3 -d ';' -f test.csv
 ```
 ```
 Date;Int;Double
