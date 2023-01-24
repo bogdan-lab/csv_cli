@@ -1,9 +1,9 @@
-# TableCLI
+# CSV CLI
 
-This repository aggregates CLI implementations for some simple table operations.
-It is expected that table is saved csv format with some delimiter.
+This repository aggregates CLI implementations for some simple operations on csv table.
 Currently utility supports the following operations:
 - sorting table rows based on the column(s) content
+- selective displaying of the table content
 
 
 ## Sorting utility
