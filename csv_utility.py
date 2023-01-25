@@ -136,7 +136,8 @@ def merge_ranges(*rngs: Union[Tuple[int], List[int]]) -> List[Tuple[int]]:
 def invert_indexes(indexes: List, size: int) -> List[int]:
     '''Function will return all indexes from the range [0, size) which are not 
        mentioned in the indexes list. The function expects that "indexes" list
-       will be sorted
+       will be sorted and contain only unique values.
+       The result list will also be sorted and contain only unique values.
     '''
     res = []
     j = 0

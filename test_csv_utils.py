@@ -7,7 +7,8 @@ from csv_utility import select_from_row, \
     crossect_ranges, \
     build_ranges_for_singles, \
     build_ranges_for_begins_ends, \
-    merge_ranges
+    merge_ranges, \
+    invert_indexes
 
 
 def test_has_duplicates():
@@ -195,3 +196,12 @@ def test_expand_int_ranges():
         1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     assert ranges_to_int_sequence([(1, 3), (5, 8)]) == [1, 2, 5, 6, 7]
     assert ranges_to_int_sequence([(-1, 3), (5, 8)]) == [-1, 0, 1, 2, 5, 6, 7]
+
+
+def test_invert_indexes():
+    assert invert_indexes([], 5) == [0, 1, 2, 3, 4]
+    assert invert_indexes([0, 1, 2, 3, 4], 5) == []
+    assert invert_indexes([0, 1, 2, 3], 5) == [4]
+    assert invert_indexes([0, 2, 3], 5) == [1, 4]
+    assert invert_indexes([0], 1) == []
+    assert invert_indexes([2, 3], 5) == [0, 1, 4]
