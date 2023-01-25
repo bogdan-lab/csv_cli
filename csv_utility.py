@@ -56,18 +56,6 @@ def select_from_row(row: str, delimiter: str, col_indexes: List[int]) -> str:
     return delimiter.join(res)
 
 
-def selected_rows_generator(content: Tuple[str], delimiter: str,
-                            col_indexes: List[int], row_indexes: List[int]):
-    '''This generator yields rows with row_indexes, which are already filtered
-       and contain only col_indexes columns
-    '''
-    for i in row_indexes:
-        l = content[i].split(delimiter)
-        res = delimiter.join(l[j] for j in col_indexes)
-        if res:
-            yield res
-
-
 def expand_int_ranges(ranges: List[Tuple[int]]) -> List[int]:
     '''This function will take a list of ranges (start, end) and expend those into the actual range of integers.
         Note that ranges are semi intervals, start is included and end is not.

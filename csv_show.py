@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 from csv_read_write import FileContent, \
     read_file,        \
@@ -6,10 +6,8 @@ from csv_read_write import FileContent, \
     print_to_std_out, \
     get_column_count
 from csv_utility import select_from_row, \
-    selected_rows_generator,    \
     merge_particular_c_indexes, \
     get_row_indexes, \
-    get_indexes_by_names, \
     has_duplicates, \
     invert_indexes
 
@@ -73,6 +71,13 @@ def check_arguments(args) -> None:
             "End of col range cannot be smaller than the beginning of column range")
 
 
+def filter_content(content: Tuple[str], delimiter: str, col_indexes: List[int], row_indexes: List[int]) -> Tuple[str]:
+    '''Returns the filtered content which contains only the chosen row_indexes and col_indexes'''
+    if len(col_indexes) == 0:
+        return tuple()
+    return tuple(select_from_row(content[i], delimiter, col_indexes) for i in row_indexes)
+
+
 def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List[int],
                delimiter: str, hide_header: bool) -> FileContent:
     '''Forms new FileContent object which containes only selected column indexes'''
@@ -80,7 +85,7 @@ def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List
     if file_data.header and not hide_header:
         new_header = select_from_row(file_data.header, delimiter, col_indexes)
     return FileContent(new_header,
-                       tuple(el for el in selected_rows_generator(file_data.content, delimiter, col_indexes, row_indexes)))
+                       tuple(filter_content(file_data.content, delimiter, col_indexes, row_indexes)))
 
 
 def callback_show(args):
