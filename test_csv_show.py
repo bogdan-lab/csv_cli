@@ -29,6 +29,165 @@ def create_default_show_args() -> Namespace:
     return args
 
 
+def test_calculate_indexes():
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=None, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=0, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == []
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=None, tail=0,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == []
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=0, tail=0,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == []
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=3, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == [0, 1, 2]
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=None, tail=3,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == [2, 3, 4]
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=1, tail=1,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == [0, 4]
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=3, tail=3,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=30, tail=30,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=10, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = csv_show.calculate_indexes((0, 5),
+                                     head=None, tail=50,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == [0, 1, 2, 3, 4]
+
+    res = csv_show.calculate_indexes((0, 0),
+                                     head=None, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == []
+
+    res = csv_show.calculate_indexes((0, 0),
+                                     head=5, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == []
+
+    res = csv_show.calculate_indexes((0, 0),
+                                     head=None, tail=10,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == []
+
+    res = csv_show.calculate_indexes((0, 0),
+                                     head=25, tail=10,
+                                     begins=None, ends=None,
+                                     indexes=None)
+    assert res == []
+
+    res = csv_show.calculate_indexes((0, 0),
+                                     head=None, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=[1, 2, 3, 4, 5])
+    assert res == []
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=None, tail=None,
+                                     begins=[1, 3], ends=[2, 4],
+                                     indexes=None)
+    assert res == [1, 3]
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=None, tail=None,
+                                     begins=[1, 1, 1, 3, 3],
+                                     ends=[2, 2, 2, 4, 4],
+                                     indexes=None)
+    assert res == [1, 3]
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=None, tail=None,
+                                     begins=[0, 1, 3], ends=[1, 3, 6],
+                                     indexes=None)
+    assert res == [0, 1, 2, 3, 4, 5]
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=4, tail=2,
+                                     begins=[1, 3], ends=[2, 4],
+                                     indexes=None)
+    assert res == [0, 1, 2, 3, 4, 5]
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=None, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=[1, 3, 4, 5])
+    assert res == [1, 3, 4, 5]
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=None, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=[1, 1, 1, 1, 1, 1])
+    assert res == [1]
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=None, tail=None,
+                                     begins=None, ends=None,
+                                     indexes=[1000])
+    assert res == []
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=1, tail=1,
+                                     begins=None, ends=None,
+                                     indexes=[2])
+    assert res == [0, 2, 5]
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=1, tail=1,
+                                     begins=[1], ends=[4],
+                                     indexes=[2, 3, 5])
+    assert res == [0, 1, 2, 3, 5]
+
+    res = csv_show.calculate_indexes((0, 6),
+                                     head=1, tail=1,
+                                     begins=[1, 1, 1], ends=[4, 4, 4],
+                                     indexes=[2, 2, 3, 3, 3, 5, 5])
+    assert res == [0, 1, 2, 3, 5]
+
+
 def test_show_single_column_with_header(tmp_path, capsys):
     header = "Date;String;Int;Double"
     r1 = "2010-01-01;one;1;1.3"

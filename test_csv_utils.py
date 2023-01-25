@@ -1,10 +1,13 @@
 import pytest
 
 from csv_utility import select_from_row, \
-    get_row_indexes, \
     ranges_to_int_sequence, \
     get_indexes_by_names, \
-    has_duplicates
+    has_duplicates, \
+    crossect_ranges, \
+    build_ranges_for_singles, \
+    build_ranges_for_begins_ends, \
+    merge_ranges
 
 
 def test_has_duplicates():
@@ -125,163 +128,57 @@ def test_elect_from_row_order_duplicates():
     assert select_from_row("1;2;3;4", ';', [0, 2, 2, 3]) == "1;3;3;4"
 
 
-def test_get_row_indexes():
-    res = get_row_indexes(total_row_count=5,
-                          head=None, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == [0, 1, 2, 3, 4]
+def test_crossect_ranges_empty():
+    res = crossect_ranges((1, 1), (2, 2))
+    assert res[0] == res[1]
+    res = crossect_ranges((1, 1), (2, 2))
+    assert res[0] == res[1]
+    res = crossect_ranges((1, 1), (1, 5))
+    assert res[0] == res[1]
+    res = crossect_ranges((3, 3), (1, 5))
+    assert res[0] == res[1]
+    res = crossect_ranges((1, 5), (3, 3))
+    assert res[0] == res[1]
 
-    res = get_row_indexes(total_row_count=5,
-                          head=0, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == []
 
-    res = get_row_indexes(total_row_count=5,
-                          head=None, tail=0,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == []
+def test_crossect_ranges_general():
+    assert crossect_ranges((1, 5), (3, 4)) == (3, 4)
+    assert crossect_ranges((1, 4), (3, 5)) == (3, 4)
+    assert crossect_ranges((1, 4), (3, 5)) == (3, 4)
+    assert crossect_ranges((3, 5), (1, 4)) == (3, 4)
+    res = crossect_ranges((1, 3), (4, 5))
+    assert res[0] == res[1]
 
-    res = get_row_indexes(total_row_count=5,
-                          head=0, tail=0,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == []
 
-    res = get_row_indexes(total_row_count=5,
-                          head=3, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == [0, 1, 2]
+def test_build_ranges_for_singles():
+    assert build_ranges_for_singles([]) == []
+    assert build_ranges_for_singles([1, 2, 3]) == [(1, 2), (2, 3), (3, 4)]
+    assert build_ranges_for_singles([3, 2, 1]) == [(1, 2), (2, 3), (3, 4)]
+    assert build_ranges_for_singles([1, 1, 3, 2]) == [
+        (1, 2), (1, 2), (2, 3), (3, 4)]
 
-    res = get_row_indexes(total_row_count=5,
-                          head=None, tail=3,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == [2, 3, 4]
 
-    res = get_row_indexes(total_row_count=5,
-                          head=1, tail=1,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == [0, 4]
+def test_build_ranges():
+    assert build_ranges_for_begins_ends([], []) == []
+    assert build_ranges_for_begins_ends([1, 2], [4, 5]) == [(1, 4), (2, 5)]
+    assert build_ranges_for_begins_ends([2, 1], [5, 4]) == [(1, 4), (2, 5)]
+    assert build_ranges_for_begins_ends([1, 4], [2, 3]) == [(1, 2), (4, 4)]
+    assert build_ranges_for_begins_ends([1, 1], [3, 3]) == [(1, 3), (1, 3)]
+    with pytest.raises(ValueError):
+        build_ranges_for_begins_ends([1], [2, 3])
 
-    res = get_row_indexes(total_row_count=5,
-                          head=3, tail=3,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == [0, 1, 2, 3, 4]
 
-    res = get_row_indexes(total_row_count=5,
-                          head=30, tail=30,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == [0, 1, 2, 3, 4]
-
-    res = get_row_indexes(total_row_count=5,
-                          head=10, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == [0, 1, 2, 3, 4]
-
-    res = get_row_indexes(total_row_count=5,
-                          head=None, tail=50,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == [0, 1, 2, 3, 4]
-
-    res = get_row_indexes(total_row_count=0,
-                          head=None, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == []
-
-    res = get_row_indexes(total_row_count=0,
-                          head=5, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == []
-
-    res = get_row_indexes(total_row_count=0,
-                          head=None, tail=10,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == []
-
-    res = get_row_indexes(total_row_count=0,
-                          head=25, tail=10,
-                          from_index=None, to_index=None,
-                          r_index=None)
-    assert res == []
-
-    res = get_row_indexes(total_row_count=0,
-                          head=None, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=[1, 2, 3, 4, 5])
-    assert res == []
-
-    res = get_row_indexes(total_row_count=6,
-                          head=None, tail=None,
-                          from_index=[1, 3], to_index=[2, 4],
-                          r_index=None)
-    assert res == [1, 3]
-
-    res = get_row_indexes(total_row_count=6,
-                          head=None, tail=None,
-                          from_index=[1, 1, 1, 3, 3],
-                          to_index=[2, 2, 2, 4, 4],
-                          r_index=None)
-    assert res == [1, 3]
-
-    res = get_row_indexes(total_row_count=6,
-                          head=None, tail=None,
-                          from_index=[0, 1, 3], to_index=[1, 3, 6],
-                          r_index=None)
-    assert res == [0, 1, 2, 3, 4, 5]
-
-    res = get_row_indexes(total_row_count=6,
-                          head=4, tail=2,
-                          from_index=[1, 3], to_index=[2, 4],
-                          r_index=None)
-    assert res == [0, 1, 2, 3, 4, 5]
-
-    res = get_row_indexes(total_row_count=6,
-                          head=None, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=[1, 3, 4, 5])
-    assert res == [1, 3, 4, 5]
-
-    res = get_row_indexes(total_row_count=6,
-                          head=None, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=[1, 1, 1, 1, 1, 1])
-    assert res == [1]
-
-    res = get_row_indexes(total_row_count=6,
-                          head=None, tail=None,
-                          from_index=None, to_index=None,
-                          r_index=[1000])
-    assert res == []
-
-    res = get_row_indexes(total_row_count=6,
-                          head=1, tail=1,
-                          from_index=None, to_index=None,
-                          r_index=[2])
-    assert res == [0, 2, 5]
-
-    res = get_row_indexes(total_row_count=6,
-                          head=1, tail=1,
-                          from_index=[1], to_index=[4],
-                          r_index=[2, 3, 5])
-    assert res == [0, 1, 2, 3, 5]
-
-    res = get_row_indexes(total_row_count=6,
-                          head=1, tail=1,
-                          from_index=[1, 1, 1], to_index=[4, 4, 4],
-                          r_index=[2, 2, 3, 3, 3, 5, 5])
-    assert res == [0, 1, 2, 3, 5]
+def tes_merge_ranges():
+    assert merge_ranges() == []
+    assert merge_ranges([]) == []
+    assert merge_ranges((1, 2), []) == [(1, 2)]
+    assert merge_ranges((1, 2), (3, 4), (5, 6)) == [(1, 2), (3, 4), (5, 6)]
+    assert merge_ranges([(1, 2), (3, 4)], (1, 2), (0, 6)) == [
+        (0, 6), (1, 2), (1, 2), (3, 4)]
+    assert merge_ranges([(1, 2), (3, 4)], [(0, 6), (1, 2)]) == [
+        (0, 6), (1, 2), (1, 2), (3, 4)]
+    with pytest.raises(TypeError):
+        merge_ranges(1, 2, 3)
 
 
 def test_expand_int_ranges():

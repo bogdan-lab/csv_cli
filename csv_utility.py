@@ -1,4 +1,4 @@
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Union
 
 
 def has_duplicates(data: List[Any]) -> bool:
@@ -81,33 +81,56 @@ def ranges_to_int_sequence(ranges: List[Tuple[int]]) -> List[int]:
     return res
 
 
-def get_row_indexes(total_row_count: int, head: int, tail: int,
-                    from_index: List[int], to_index: List[int],
-                    r_index: List[int]) -> List[int]:
-    '''This function will return list of row indexes based of head and tail counters,
-       ranges defined by from_index and to_index arrays and list of exact indexes -
-       r_index.
-       Returned values will be normalized to the size of the table and in case when
-       they should be combined function will guarantee that indexes in the returned 
-       list will be unique and will not crossect.
+def crossect_ranges(lhs: Tuple[int], rhs: Tuple[int]) -> Tuple[int]:
+    '''Accepts two ranges defined by semiinterval (the first value is included and the second is not),
+       and returns the corossection of these two ranges as a semiinterval.
+       Function assumes that input ranges are valid: first <= second
     '''
-    if head is None and tail is None and from_index is None and r_index is None:
-        return ranges_to_int_sequence([(0, total_row_count)])
+    if rhs[0] >= lhs[1] or lhs[0] >= rhs[1]:
+        return tuple((lhs[0], lhs[0]))
+    return tuple((max(lhs[0], rhs[0]), min(lhs[1], rhs[1])))
 
-    ranges = []
-    if head is not None:
-        ranges.append((0, min(head, total_row_count)))
-    if tail is not None:
-        ranges.append((max(0, total_row_count - tail), total_row_count))
-    if from_index is not None:
-        ranges.extend(map(
-            lambda x: (min(x[0], total_row_count), min(x[1], total_row_count)),
-            zip(from_index, to_index)))
-    if r_index is not None:
-        ranges.extend((min(x, total_row_count), min(
-            x+1, total_row_count)) for x in r_index)
-    ranges.sort(key=lambda x: x[0])
-    return ranges_to_int_sequence(ranges)
+
+def build_ranges_for_singles(values: List[int]) -> List[Tuple[int]]:
+    '''Returns list of ranges which corresponds to the input individual values.
+       List of ranges is sorted by the left edge.
+       Duplicates in the input values will result in duplicates in the range values
+    '''
+    return [(el, el+1) for el in sorted(values)]
+
+
+def build_ranges_for_begins_ends(begins: List[int], ends: List[int]) -> List[Tuple[int]]:
+    '''Build list of ranges from two list.
+    The first list contains begins of ranges and the second list - ends.
+    If list sizes are not equal ValueError will be raised
+    The resulting list of ranges will be sorted by their left edge.
+    If some ends values are smaller than corresponding begins values, they will be equated to the begins values.
+    Therefore for all ranges in the result begin <= end will be fulfilled.
+    Function does not filter duplicates if those exists
+    '''
+    if len(begins) != len(ends):
+        raise ValueError("Range edges lists have different lengthes.")
+    return list(sorted((b, max(b, e)) for b, e in zip(begins, ends)))
+
+
+def merge_ranges(*rngs: Union[Tuple[int], List[int]]) -> List[Tuple[int]]:
+    '''Put all ranges from the input into one list of ranges sorted by the left edge.
+    One can pass separate ranges into this function, defined by a tuple
+    Or one can pass list of such tuples.
+    If input cannot be represented as a range or list of ranges Type error will be raised.
+    Function allows duplicate and empty ranges in the result list
+    '''
+    res = []
+    for rng in rngs:
+        if isinstance(rng, tuple):
+            res.append(rng)
+        elif isinstance(rng, list):
+            res.extend(rng)
+        else:
+            raise TypeError(
+                f"{rng} cannot be converted into the range or list of ranges")
+    res.sort()
+    return res
 
 
 def merge_particular_c_indexes(c_index: List[int], c_name: List[str],

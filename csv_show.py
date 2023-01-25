@@ -6,8 +6,11 @@ from csv_read_write import FileContent, \
     print_to_std_out, \
     get_column_count
 from csv_utility import select_from_row, \
+    build_ranges_for_begins_ends, \
+    build_ranges_for_singles, \
+    crossect_ranges, \
+    ranges_to_int_sequence, \
     merge_particular_c_indexes, \
-    get_row_indexes, \
     has_duplicates, \
     invert_indexes
 
@@ -88,6 +91,31 @@ def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List
                        tuple(filter_content(file_data.content, delimiter, col_indexes, row_indexes)))
 
 
+def calculate_indexes(full_range: Tuple[int], head: int, tail: int, begins: List[int],
+                      ends: List[int], indexes: List[int]) -> List[int]:
+    '''Calculates the exact indexes which should be displaid from the full_range based on all
+    input ranges nad particular indexes.
+    Function guarantees that the return list will contain only unique values from within full_range
+    and they will be sorted.
+    '''
+    if head is None and tail is None and begins is None and ends is None and indexes is None:
+        return ranges_to_int_sequence([full_range])
+    res = []
+    if head is not None:
+        res.append(crossect_ranges(full_range, (full_range[0], head)))
+    if tail is not None:
+        res.append(crossect_ranges(
+            full_range, (full_range[1] - tail, full_range[1])))
+    if begins is not None:  # assume that in that case ends is also not None
+        res.extend([crossect_ranges(full_range, el)
+                   for el in build_ranges_for_begins_ends(begins, ends)])
+    if indexes is not None:
+        res.extend([crossect_ranges(full_range, el)
+                   for el in build_ranges_for_singles(indexes)])
+    res.sort()
+    return ranges_to_int_sequence(res)
+
+
 def callback_show(args):
     '''Performes columns selection from file according the the given arguments'''
     check_arguments(args)
@@ -97,10 +125,11 @@ def callback_show(args):
         row_count = len(file_data.content)
         c_index = merge_particular_c_indexes(
             args.c_index, args.c_name, file_data.header, args.delimiter)
-        col_indexes = get_row_indexes(
-            column_count, args.c_head, args.c_tail, args.from_col, args.to_col, c_index)
-        row_indexes = get_row_indexes(row_count, args.r_head, args.r_tail,
-                                      args.from_row, args.to_row, args.r_index)
+
+        col_indexes = calculate_indexes((0, column_count), args.c_head, args.c_tail,
+                                        args.from_col, args.to_col, c_index)
+        row_indexes = calculate_indexes((0, row_count), args.r_head, args.r_tail,
+                                        args.from_row, args.to_row, args.r_index)
         if args.except_flag:
             col_indexes = invert_indexes(col_indexes, column_count)
             row_indexes = invert_indexes(row_indexes, row_count)
