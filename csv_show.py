@@ -17,8 +17,6 @@ from csv_utility import select_from_row, \
 def check_arguments(args) -> None:
     '''Does some early basic checks if the user input is valid.
     If it is not an exception will be raised'''
-    if args.c_index is not None and args.c_name is not None:
-        raise ValueError("Please define column by index OR by name!")
     if args.c_index is not None and any(el < 0 for el in args.c_index):
         raise ValueError("Column index cannot have negative value.")
     if args.c_index is not None and has_duplicates(args.c_index):

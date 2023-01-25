@@ -971,3 +971,33 @@ def test_show_except_show_selected(tmp_path, capsys):
     exp_r3 = "22,24"
     exp_r5 = "42,44"
     assert out[:-1] == '\n'.join((exp_header, exp_r2, exp_r3, exp_r5))
+
+
+def test_show_columns_set_as_mix_fo_index_and_name(tmp_path, capsys):
+    header = "one;two;three;four;five"
+    r = "1;2;3;4;5"
+
+    fpath = create_file(tmp_path / "test.csv", (header, r, r, r, r, r))
+    args = create_default_show_args()
+    args.files = [fpath]
+    args.delimiter = ';'
+
+    # No crossection
+    exp_header = "two;three"
+    exp_r = "2;3"
+
+    args.c_index = [1]
+    args.c_name = ["three"]
+    csv_show.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r,
+                                 exp_r, exp_r, exp_r, exp_r))
+
+    exp_header = "two;three;four"
+    exp_r = "2;3;4"
+    args.c_index = [1, 2]
+    args.c_name = ["three", "four"]
+    csv_show.callback_show(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((exp_header, exp_r,
+                                 exp_r, exp_r, exp_r, exp_r))
