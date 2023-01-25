@@ -1,14 +1,39 @@
-from typing import List, Tuple
+from typing import List, Tuple, Any
 
 
-def get_col_indexes(col_indexes: List[int], header: str, col_names: List[str],
-                    delimiter: str) -> List[int]:
-    '''Returns column indexes selected by user either directly or according to
-    column names in the header'''
-    if col_indexes is not None:
-        return col_indexes
-    name_list = [el.strip() for el in header.casefold().split(delimiter)]
-    return [name_list.index(cn.casefold()) for cn in col_names]
+def has_duplicates(data: List[Any]) -> bool:
+    '''Returns true if `data` contains duplicates and false otherwise
+    '''
+    unique_data = {el for el in data}
+    return len(data) != 0 and len(data) != len(unique_data)
+
+
+def get_indexes_by_names(header: str, delimiter: str, col_names: List[int]) -> List[int]:
+    '''Method will return list of indexes which corresponds to the input list of column names.
+       Note that index list will be in the same order as list of names.
+       Comparison is case sensitive, but ignores trailing white spaces
+       ValueError will be raised if:
+       * there is a name which cannot be found in the haeder
+       * there are duplicate names in the col_names argument
+       * there is more than one occurrance the name from col_names in header
+       If function return successfully there is no duplicates in the result list
+    '''
+    req_names = [el.strip() for el in col_names]
+    if has_duplicates(req_names):
+        raise ValueError("there are duplicates among requested column names.")
+    name_list = [el.strip() for el in header.split(delimiter)]
+
+    res = [0]*len(req_names)
+    for i, name in enumerate(req_names):
+        cnt = name_list.count(name)
+        if cnt == 0:
+            raise ValueError(f"Cannot find {name} in the header")
+        elif cnt > 1:
+            raise ValueError(f"There are several columns named as f{name}")
+        else:
+            res[i] = name_list.index(name)
+
+    return res
 
 
 def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
@@ -99,7 +124,7 @@ def merge_particular_c_indexes(c_index: List[int], c_name: List[str],
     if c_index is not None:
         res.extend(c_index)
     if c_name is not None:
-        res.extend(get_col_indexes(None, header, c_name, delimiter))
+        res.extend(get_indexes_by_names(header, delimiter, c_name))
     return res
 
 

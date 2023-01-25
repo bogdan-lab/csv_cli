@@ -1,21 +1,91 @@
-from csv_utility import get_col_indexes, \
-    select_from_row, \
+import pytest
+
+from csv_utility import select_from_row, \
     get_row_indexes, \
-    expand_int_ranges
+    expand_int_ranges, \
+    get_indexes_by_names, \
+    has_duplicates
 
 
-def test_get_col_index():
-    header = "One;TwO;THREE"
-    assert get_col_indexes(None, header, ["TWO"], ";") == [1]
-    assert get_col_indexes(None, header, ["one"], ";") == [0]
-    assert get_col_indexes(None, header, ["Three"], ";") == [2]
-    assert get_col_indexes(None, header, ["one", 'three'], ";") == [0, 2]
+def test_has_duplicates():
+    assert has_duplicates([1, 1, 1, 1])
+    assert has_duplicates([1, 1, 2, 3])
+    assert has_duplicates([1, 2, 2, 3])
+    assert has_duplicates([1, 2, 3, 3])
+    assert has_duplicates([3, 3, 2, 1])
+    assert has_duplicates([3, 2, 2, 1])
+    assert has_duplicates([3, 2, 1, 1])
+    assert not has_duplicates([1])
+    assert not has_duplicates([])
+    assert not has_duplicates([1, 2, 3])
+    assert not has_duplicates([3, 2, 1])
 
-    header = " \t one, \t two  , three  \t   "
-    assert get_col_indexes(None, header, ["TWO"], ",") == [1]
-    assert get_col_indexes(None, header, ["one"], ",") == [0]
-    assert get_col_indexes(None, header, ["Three"], ",") == [2]
-    assert get_col_indexes(None, header, ["one", 'three'], ",") == [0, 2]
+
+def test_get_index_by_names_empty():
+    header = ""
+    assert get_indexes_by_names(header, ';', []) == []
+    assert get_indexes_by_names(header, '-', []) == []
+
+
+def test_get_index_by_names_one():
+    header = "header"
+    assert get_indexes_by_names(header, ';', []) == []
+    assert get_indexes_by_names(header, ',', ["header"]) == [0]
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, '-', ["Header"])
+
+
+def test_get_index_by_names_spaces():
+    header = "\theader   "
+    assert get_indexes_by_names(header, ';', ["header"]) == [0]
+    assert get_indexes_by_names(header, ',', ["\theader   "]) == [0]
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ',', ["  \t  "])
+    header == '    '
+    assert get_indexes_by_names(header, ';', []) == []
+    # There is no sense in keeping name which consists of white spaces only
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ';', ["\t"])
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ';', ['    '])
+
+
+def test_get_index_by_names_general():
+    header = "one,two,three"
+    assert get_indexes_by_names(header, ',', []) == []
+    assert get_indexes_by_names(
+        header, ',', ["one", "two", "three"]) == [0, 1, 2]
+    assert get_indexes_by_names(
+        header, ',', ["three", "two", "one"]) == [2, 1, 0]
+    assert get_indexes_by_names(
+        header, ',', [" one", " two ", " three\t"]) == [0, 1, 2]
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ',', ["tWo"])
+
+    header = "   one    ,   two\t\t, three"
+    assert get_indexes_by_names(
+        header, ',', ["two", "one", "three"]) == [1, 0, 2]
+
+
+def test_get_index_by_names_duplicates():
+    header = "one;two;two;three"
+    assert get_indexes_by_names(header, ';', ['three', 'one']) == [3, 0]
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ';', ['two'])
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ';', ['one', 'two'])
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ';', ['one', 'one'])
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ';', ['three', 'one', 'one'])
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ';', ['two', 'two'])
+
+
+def test_get_index_by_names_hidden_diplicates():
+    header = "one; two; three"
+    with pytest.raises(ValueError):
+        get_indexes_by_names(header, ';', ["     two", "two     "])
 
 
 def test_select_from_row():

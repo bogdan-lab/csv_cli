@@ -8,7 +8,9 @@ from csv_read_write import FileContent, \
 from csv_utility import select_from_row, \
     selected_rows_generator,    \
     merge_particular_c_indexes, \
-    get_row_indexes,            \
+    get_row_indexes, \
+    get_indexes_by_names, \
+    has_duplicates, \
     invert_indexes
 
 
@@ -19,9 +21,15 @@ def check_arguments(args) -> None:
         raise ValueError("Please define column by index OR by name!")
     if args.c_index is not None and any(el < 0 for el in args.c_index):
         raise ValueError("Column index cannot have negative value.")
+    if args.c_index is not None and has_duplicates(args.c_index):
+        raise ValueError(
+            "Duplicate indexes in 'c_index' argument are not allowed")
     if args.c_name is not None and args.no_header:
         raise ValueError(
             "You cannot select column by name if there is no header")
+    if args.c_name is not None and has_duplicates(args.c_name):
+        raise ValueError(
+            "Duplicate names in 'c_name' argument are not allowed")
     if args.r_head is not None and args.r_head < 0:
         raise ValueError("Row head value cannot be negative")
     if args.r_tail is not None and args.r_tail < 0:
@@ -43,6 +51,9 @@ def check_arguments(args) -> None:
             "End of row range cannot be smaller than the beginning of row range")
     if args.r_index is not None and any(el < 0 for el in args.r_index):
         raise ValueError("Row index in -r_index argument cannot be negative.")
+    if args.r_index is not None and has_duplicates(args.r_index):
+        raise ValueError(
+            "Duplicate indexes in 'r_index' argument are not allowed")
     if args.c_head is not None and args.c_head < 0:
         raise ValueError("Column head value cannot be negative")
     if args.c_tail is not None and args.c_tail < 0:

@@ -3,8 +3,12 @@ from enum import Enum
 import datetime
 import math
 
-from csv_read_write import FileContent, read_file, convert_to_text, print_to_std_out
-from csv_utility import get_col_indexes
+from csv_read_write import FileContent, \
+    read_file, \
+    convert_to_text, \
+    print_to_std_out
+from csv_utility import get_indexes_by_names, \
+    has_duplicates
 
 
 class ColumnType(Enum):
@@ -83,6 +87,12 @@ def check_arguments(args) -> None:
         elif len(args.c_index) != len(args.c_type):
             raise ValueError("Number of columns should be equal to number of"
                              " provided number of column types")
+    if args.c_name is not None and has_duplicates(args.c_name):
+        raise ValueError(
+            "Duplicate names in 'c_name' argument are not allowed.")
+    if args.c_index is not None and has_duplicates(args.c_index):
+        raise ValueError(
+            "Duplicate indexes in 'c_index' argument are not allowed.")
 
 
 def callback_sort(args):
@@ -90,8 +100,10 @@ def callback_sort(args):
     check_arguments(args)
     for file in args.files:
         file_data = read_file(file, not args.no_header)
-        col_index = get_col_indexes(args.c_index, file_data.header,
-                                    args.c_name, args.delimiter)
+        col_index = (args.c_index
+                     if args.c_index is not None
+                     else get_indexes_by_names(file_data.header,
+                                               args.delimiter, args.c_name))
         file_data = sort_content(file_data, col_index, args.c_type,
                                  args.delimiter, args.reverse, args.time_fmt)
         if args.inplace:
