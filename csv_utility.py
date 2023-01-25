@@ -36,14 +36,24 @@ def get_indexes_by_names(header: str, delimiter: str, col_names: List[int]) -> L
     return res
 
 
-def select_from_row(row: str, delimiter: str, col_indexes: List[int]):
+def select_from_row(row: str, delimiter: str, col_indexes: List[int]) -> str:
     '''Filters the given row in the way, that only the given column indexes are left in it.
        Columns in the row are defined by delimiter.
        Note that the result will be still string with the same delimiter but
        it will contain only the chosen columns
+       Regardless to the order of indexes in col_indexes argument the value orders in the result
+       will be the same as in the row.
+       If col_index contains duplicate values corresponding values from row will also be also duplicated
     '''
     l = row.split(delimiter)
-    return delimiter.join(l[i] for i in col_indexes)
+    res = [""]*len(col_indexes)
+    for i, c in enumerate(sorted(col_indexes)):
+        if c >= len(l):
+            raise ValueError(
+                f"There is no column with index {c} in a row {row}")
+        else:
+            res[i] = l[c]
+    return delimiter.join(res)
 
 
 def selected_rows_generator(content: Tuple[str], delimiter: str,

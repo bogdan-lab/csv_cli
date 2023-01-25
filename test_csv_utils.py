@@ -101,6 +101,30 @@ def test_select_from_row():
     assert select_from_row("1;2;3;4;5", ";", []) == ""
 
 
+def test_select_from_row_special():
+    assert select_from_row("", ',', []) == ""
+    assert select_from_row("one", ',', [0]) == "one"
+    assert select_from_row("", ',', [0]) == ""
+    with pytest.raises(ValueError):
+        select_from_row("one", ',', [1])
+    with pytest.raises(ValueError):
+        select_from_row("one,two,three", ',', [1, 3])
+
+
+def test_select_from_row_order():
+    assert select_from_row("1,2,3,4", ',', [0, 2]) == "1,3"
+    assert select_from_row("1,2,3,4", ',', [2, 0]) == "1,3"
+    assert select_from_row("1,2,3,4", ',', [3, 2, 1, 0]) == "1,2,3,4"
+    assert select_from_row("1,2,3,4", ',', [1, 3, 2, 0]) == "1,2,3,4"
+    assert select_from_row("1,2,3,4", ',', [0, 3, 1]) == "1,2,4"
+
+
+def test_elect_from_row_order_duplicates():
+    assert select_from_row("1;2;3;4", ';', [0, 0, 0]) == "1;1;1"
+    assert select_from_row("1;2;3;4", ';', [3, 3, 3]) == "4;4;4"
+    assert select_from_row("1;2;3;4", ';', [0, 2, 2, 3]) == "1;3;3;4"
+
+
 def test_get_row_indexes():
     res = get_row_indexes(total_row_count=5,
                           head=None, tail=None,
