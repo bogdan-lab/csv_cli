@@ -2,7 +2,7 @@ import pytest
 
 from csv_utility import select_from_row, \
     get_row_indexes, \
-    expand_int_ranges, \
+    ranges_to_int_sequence, \
     get_indexes_by_names, \
     has_duplicates
 
@@ -285,12 +285,16 @@ def test_get_row_indexes():
 
 
 def test_expand_int_ranges():
-    assert expand_int_ranges([(1, 2), (4, 6)]) == [1, 4, 5]
-    assert expand_int_ranges([(1, 2)]) == [1]
-    assert expand_int_ranges([(1, 1)]) == []
-    assert expand_int_ranges([(1, 1), (1, 1), (1, 1)]) == []
-    assert expand_int_ranges([(1, 1), (2, 3), (3, 3)]) == [2]
-    assert expand_int_ranges([(1, 5)]) == [1, 2, 3, 4]
-    assert expand_int_ranges([(1, 5), (2, 7)]) == [1, 2, 3, 4, 5, 6]
-    assert expand_int_ranges([(1, 5), (2, 7), (3, 6)]) == [
+    assert ranges_to_int_sequence([(1, 2), (4, 6)]) == [1, 4, 5]
+    assert ranges_to_int_sequence([(1, 2)]) == [1]
+    assert ranges_to_int_sequence([(1, 1)]) == []
+    assert ranges_to_int_sequence([(1, 1), (1, 1), (1, 1)]) == []
+    assert ranges_to_int_sequence([(1, 1), (2, 3), (3, 3)]) == [2]
+    assert ranges_to_int_sequence([(1, 5)]) == [1, 2, 3, 4]
+    assert ranges_to_int_sequence([(1, 5), (2, 7)]) == [1, 2, 3, 4, 5, 6]
+    assert ranges_to_int_sequence([(1, 5), (2, 7), (3, 6)]) == [
         1, 2, 3, 4, 5, 6]
+    assert ranges_to_int_sequence([(1, 10), (2, 4), (3, 5), (4, 7), (8, 9), (8, 11)]) == [
+        1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    assert ranges_to_int_sequence([(1, 3), (5, 8)]) == [1, 2, 5, 6, 7]
+    assert ranges_to_int_sequence([(-1, 3), (5, 8)]) == [-1, 0, 1, 2, 5, 6, 7]

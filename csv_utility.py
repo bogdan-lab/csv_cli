@@ -56,12 +56,14 @@ def select_from_row(row: str, delimiter: str, col_indexes: List[int]) -> str:
     return delimiter.join(res)
 
 
-def expand_int_ranges(ranges: List[Tuple[int]]) -> List[int]:
-    '''This function will take a list of ranges (start, end) and expend those into the actual range of integers.
+def ranges_to_int_sequence(ranges: List[Tuple[int]]) -> List[int]:
+    '''This function will take a list of ranges (start, end) and convert it into the sequence of integers.
         Note that ranges are semi intervals, start is included and end is not.
         For example, input [(1,2), (4,6)] will be converted into [1, 4, 5].
         Note that function expects the list of ranges to be sorted by the left edge.
         The resulting list will contain only unique integers which are present in at least one of the given ranges.
+        The result sequence will be sorted.
+        Method ignores empty ranges in the input list.
     '''
     res = []
     for rng in ranges:
@@ -90,7 +92,7 @@ def get_row_indexes(total_row_count: int, head: int, tail: int,
        list will be unique and will not crossect.
     '''
     if head is None and tail is None and from_index is None and r_index is None:
-        return expand_int_ranges([(0, total_row_count)])
+        return ranges_to_int_sequence([(0, total_row_count)])
 
     ranges = []
     if head is not None:
@@ -105,7 +107,7 @@ def get_row_indexes(total_row_count: int, head: int, tail: int,
         ranges.extend((min(x, total_row_count), min(
             x+1, total_row_count)) for x in r_index)
     ranges.sort(key=lambda x: x[0])
-    return expand_int_ranges(ranges)
+    return ranges_to_int_sequence(ranges)
 
 
 def merge_particular_c_indexes(c_index: List[int], c_name: List[str],
