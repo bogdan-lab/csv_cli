@@ -133,24 +133,6 @@ def merge_ranges(*rngs: Union[Tuple[int], List[int]]) -> List[Tuple[int]]:
     return res
 
 
-def merge_particular_c_indexes(c_index: List[int], c_name: List[str],
-                               header: str, delimiter: str) -> List[int]:
-    '''Function takes as an input two lists which define particular columns in the table.
-       The first list contains columns indexes, the second - columns names.
-       Function converts name list into the one with indexes and merges
-       it with the initial index list (without sorting).
-       The merge result is returned.
-    '''
-    if c_index is None and c_name is None:
-        return None
-    res = []
-    if c_index is not None:
-        res.extend(c_index)
-    if c_name is not None:
-        res.extend(get_indexes_by_names(header, delimiter, c_name))
-    return res
-
-
 def invert_indexes(indexes: List, size: int) -> List[int]:
     '''Function will return all indexes from the range [0, size) which are not 
        mentioned in the indexes list. The function expects that "indexes" list

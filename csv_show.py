@@ -10,9 +10,9 @@ from csv_utility import select_from_row, \
     build_ranges_for_singles, \
     crossect_ranges, \
     ranges_to_int_sequence, \
-    merge_particular_c_indexes, \
     has_duplicates, \
-    invert_indexes
+    invert_indexes, \
+    get_indexes_by_names
 
 
 def check_arguments(args) -> None:
@@ -116,6 +116,24 @@ def calculate_indexes(full_range: Tuple[int], head: int, tail: int, begins: List
     return ranges_to_int_sequence(res)
 
 
+def merge_named_and_pure_column_indexes(pure: List[int], named: List[str],
+                                        header: str, delimiter: str) -> List[int]:
+    '''Function takes as an input two lists which define particular columns in the table.
+       The first list contains columns indexes, the second - columns names.
+       Function converts name list into the one with indexes and merges
+       it with the initial index list (without sorting).
+       The merge result is returned.
+    '''
+    if pure is None and named is None:
+        return None
+    res = []
+    if pure is not None:
+        res.extend(pure)
+    if named is not None:
+        res.extend(get_indexes_by_names(header, delimiter, named))
+    return res
+
+
 def callback_show(args):
     '''Performes columns selection from file according the the given arguments'''
     check_arguments(args)
@@ -123,11 +141,11 @@ def callback_show(args):
         file_data = read_file(file, not args.no_header)
         column_count = get_column_count(file_data, args.delimiter)
         row_count = len(file_data.content)
-        c_index = merge_particular_c_indexes(
+        separate_col_indexes = merge_named_and_pure_column_indexes(
             args.c_index, args.c_name, file_data.header, args.delimiter)
 
         col_indexes = calculate_indexes((0, column_count), args.c_head, args.c_tail,
-                                        args.from_col, args.to_col, c_index)
+                                        args.from_col, args.to_col, separate_col_indexes)
         row_indexes = calculate_indexes((0, row_count), args.r_head, args.r_tail,
                                         args.from_row, args.to_row, args.r_index)
         if args.except_flag:
