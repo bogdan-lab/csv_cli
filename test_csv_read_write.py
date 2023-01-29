@@ -7,7 +7,8 @@ def test_read_empty_file(tmp_path):
     fpath.touch()
     # with header
     res = crw.read_file(fpath, has_header=True)
-    assert res.header is None
+    assert res.header is not None
+    assert res.header == ""
     assert res.content is not None
     assert len(res.content) == 0
     # whithout header
