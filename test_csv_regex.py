@@ -1,6 +1,6 @@
 from argparse import Namespace
 import pytest
-from re import error
+from re import error, compile
 
 import csv_regex
 
@@ -44,3 +44,75 @@ def test_check_arguments() -> None:
     args.c_index = [0, 1]
     with pytest.raises(ValueError):
         csv_regex.check_arguments(args)
+
+
+def test_match_all_regex() -> None:
+    data = "hello"
+    delimiter = ';'
+    regex = [compile("^h.*o$")]
+    indexes = [0]
+    assert csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    data = "Hello"
+    delimiter = ';'
+    regex = [compile("^h.*o$")]
+    indexes = [0]
+    assert not csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    data = "hello;world"
+    delimiter = ';'
+    regex = [compile("([helo]+)")]
+    indexes = [0]
+    assert csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    data = "hello;world"
+    delimiter = ';'
+    regex = [compile("([^world])")]
+    indexes = [1]
+    assert not csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    data = "hello;world"
+    delimiter = ';'
+    regex = [compile("(hello|world)")]*2
+    indexes = [0, 1]
+    assert csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    # test start string literal inside the column
+    data = "python;is;the;theBest"
+    delimiter = ';'
+    regex = [compile("^i")]
+    indexes = [1]
+    assert csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    data = "python;his;the;theBest"
+    delimiter = ';'
+    regex = [compile("^i")]
+    indexes = [1]
+    assert not csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    # test end string symbol inside the column
+    data = "python;his;the;theBest"
+    delimiter = ';'
+    regex = [compile("e$")]
+    indexes = [2]
+    assert csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    data = "python;his;that;theBest"
+    delimiter = ';'
+    regex = [compile("e$")]
+    indexes = [2]
+    assert not csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    # test match in several column separated by not interesting columns
+    data = "python;his;that;theBest"
+    delimiter = ';'
+    regex = [compile("B"), compile("[his]{3}"), ]
+    indexes = [3, 1]
+    assert csv_regex.match_all_regex(data, delimiter, regex, indexes)
+
+    # One of few columns does not match
+    data = "python;his;that;theBest"
+    delimiter = ';'
+    regex = [compile("B"), compile("[his]{4}"), ]
+    indexes = [3, 1]
+    assert not csv_regex.match_all_regex(data, delimiter, regex, indexes)

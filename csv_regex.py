@@ -50,19 +50,19 @@ def check_arguments(args: Namespace) -> None:
                          "number of column names.")
 
 
-def form_total_regex(col_indexes: List[int], expressions: List[str],
-                     delimiter: str) -> Pattern:
-    '''Constructs regular expression based on the given input.
-    The result expression can be searched in the entire table row and
-    the search result will be the same as simultaneous search in requested columns.
+def match_all_regex(line: str, delimiter: str, expressions: List[Pattern],
+                    indexes: List[int]) -> bool:
+    '''Function returns True if we can find all expressions in the defined column in
+    the given line. Function assumes that both (expressions and indexes) lists are
+    not empty and have the same length.
     '''
-    col_regex = ["(.*)"]*(max(col_indexes)+1)
-    for index, regex in zip(col_indexes, expressions):
-        col_regex[index] = regex
-    # Note that col_regex[-1] does not necessarily corresponds to the last column
-    # but col_regex[0] element has to correspond to the first column
-    col_regex[0] = '^' + col_regex[0]
-    return compile(delimiter.join(col_regex))
+    # Note that we have to form string for each column value, otherwise behavior of
+    # `^` symbol is undefined according to the documentation
+    data = line.split(delimiter)
+    for index, regex in zip(indexes, expressions):
+        if not regex.search(data[index]):
+            return False
+    return True
 
 
 def select_rows(file_data: FileContent, col_indexes: List[int],
@@ -70,10 +70,10 @@ def select_rows(file_data: FileContent, col_indexes: List[int],
     '''Constructs new FileContent instance by selecting only those content rows, which
     contain given expressions in the given columns.
     '''
-    total_expression = form_total_regex(col_indexes, expressions, delimiter)
+    expressions = list(map(lambda x: compile(x), expressions))
     return FileContent(file_data.header,
                        tuple(line for line in
-                             filter(lambda x: total_expression.search(x),
+                             filter(lambda x: match_all_regex(x, delimiter, expressions, col_indexes),
                                     file_data.content)))
 
 
