@@ -60,6 +60,8 @@ def match_all_regex(line: str, delimiter: str, expressions: List[Pattern],
     # `^` symbol is undefined according to the documentation
     data = line.split(delimiter)
     for index, regex in zip(indexes, expressions):
+        if index >= len(data):
+            raise ValueError(f"There is no {index} column in the row {line}")
         if not regex.search(data[index]):
             return False
     return True
