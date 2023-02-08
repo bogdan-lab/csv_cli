@@ -99,7 +99,10 @@ def setup_parser(parser):
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     regex_parser.add_argument("-e", "--expression", action="append", type=str,
                               default=DEFAULT_REGEX_EXPRESSION,
-                              help="Defines a regular expression which will be used for values in the previously stated column.")
+                              help="Defines a regular expression which will be used for values in the previously stated column."
+                                   "Note that each cell content is considered as separate string when it is matched to the regex.")
+    regex_parser.add_argument("--ignore_case", action=DEFAULT_REGEX_IGNORE_CASE_ACTION,
+                              help="If set letter case will be ignored during regex matching.")
     regex_parser.set_defaults(callback=callback_regex)
 
 

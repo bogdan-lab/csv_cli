@@ -1,6 +1,7 @@
 from argparse import Namespace
 from typing import List
 from re import compile, \
+    IGNORECASE, \
     Pattern
 
 from csv_read_write import FileContent, \
@@ -9,14 +10,6 @@ from csv_read_write import FileContent, \
     print_to_std_out
 from csv_utility import get_indexes_by_names, \
     has_duplicates
-
-
-def check_for_invalid_regex(expressions: List[str]) -> None:
-    '''Function will try to compile each expression in the list
-    and throw the corresponding error on fail.
-    '''
-    for el in expressions:
-        _ = compile(el)
 
 
 def check_arguments(args: Namespace) -> None:
@@ -41,7 +34,6 @@ def check_arguments(args: Namespace) -> None:
     if any(len(el) == 0 for el in args.expression):
         raise ValueError(
             "Empty string is considered to be invalid regular expression.")
-    check_for_invalid_regex(args.expression)
     if args.c_index and len(args.c_index) != len(args.expression):
         raise ValueError("The number of given expressions should match the"
                          "number of column indexes.")
@@ -72,16 +64,24 @@ def select_rows(file_data: FileContent, col_indexes: List[int],
     '''Constructs new FileContent instance by selecting only those content rows, which
     contain given expressions in the given columns.
     '''
-    expressions = list(map(lambda x: compile(x), expressions))
     return FileContent(file_data.header,
                        tuple(line for line in
                              filter(lambda x: match_all_regex(x, delimiter, expressions, col_indexes),
                                     file_data.content)))
 
 
+def compile_regex(raw: str, ignore_case: bool) -> Pattern:
+    '''Compiles the given regex with appended ignore_case flag if it is necessary.
+    If the input string is invalid regular expression, re.error will be raised.
+    '''
+    return compile(raw, IGNORECASE) if ignore_case else compile(raw)
+
+
 def callback_regex(args: Namespace) -> None:
     '''Performs filtering table content by regular expressions'''
     check_arguments(args)
+    args.expression = list(compile_regex(el, args.ignore_case)
+                           for el in args.expression)
     for file in args.files:
         file_data = read_file(file, not args.no_header)
         col_indexes = (args.c_index

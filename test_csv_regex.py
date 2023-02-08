@@ -8,6 +8,7 @@ from utils_for_tests import merge_args, \
     create_default_file_params, \
     create_default_column_selector, \
     create_default_inplace_argument, \
+    convert_argparser_action_to_bool, \
     create_file
 from csv_defaults import *
 
@@ -17,35 +18,9 @@ def create_default_regex_args() -> Namespace:
                       create_default_column_selector(),
                       create_default_inplace_argument())
     args.expression = DEFAULT_REGEX_EXPRESSION
+    args.ignore_case = convert_argparser_action_to_bool(
+        DEFAULT_REGEX_IGNORE_CASE_ACTION)
     return args
-
-
-def test_check_invalid_expressions() -> None:
-    # single regex and it is the wrong one
-    with pytest.raises(error):
-        csv_regex.check_for_invalid_regex(["[a,b"])
-    # two regex and both are wrong
-    with pytest.raises(error):
-        csv_regex.check_for_invalid_regex(["[a, b", "c, d]"])
-    # two regex and only one of them is wrong
-    with pytest.raises(error):
-        csv_regex.check_for_invalid_regex(["[a-z]", "c(d"])
-
-
-def test_check_arguments() -> None:
-    # No default search is preferred
-    args = create_default_regex_args()
-    with pytest.raises(ValueError):
-        csv_regex.check_arguments(args)
-    # empty regex are forbidden
-    args.expression = [""]
-    args.c_index = [0]
-    with pytest.raises(ValueError):
-        csv_regex.check_arguments(args)
-    args.expression = ["[a-z]", ""]
-    args.c_index = [0, 1]
-    with pytest.raises(ValueError):
-        csv_regex.check_arguments(args)
 
 
 def test_match_all_regex() -> None:
@@ -309,5 +284,53 @@ def test_hide_header_flag(tmp_path) -> None:
     pass
 
 
-def test_regex_selection_with_ignorecase_flag(tmp_path) -> None:
-    pass
+def test_regex_selection_with_ignorecase_flag(tmp_path, capsys) -> None:
+    r1 = "one, two, three"
+    r2 = "twelve, fourteen, sixteen"
+    r3 = "eleven, twenty, forty five"
+    r4 = "TWENTY ONE, SEVENTEEN, ELEVEN"
+    r5 = "thirty five, ten, one hundred"
+    r6 = "FiFtY OnE, twenty five, thirty"
+    fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5, r6))
+
+    args = create_default_regex_args()
+    args.files = [fpath]
+    args.delimiter = ','
+    args.c_index = [0]
+    args.expression = ["one"]
+    args.ignore_case = True
+    args.no_header = True
+
+    csv_regex.callback_regex(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r4, r6))
+
+
+def test_raise_error_for_invalid_regex(tmp_path) -> None:
+    r1 = "1;2"
+    r2 = "11;22"
+    r3 = "111;222"
+    fpath = create_file(tmp_path / "test.csv", (r1, r2, r3))
+
+    args = create_default_regex_args()
+    args.files = [fpath]
+    args.delimiter = ';'
+    # single regex and it is incorrect
+    args.c_index = [0]
+    args.expression = ["[ab"]
+    with pytest.raises(error):
+        csv_regex.callback_regex(args)
+    # both are incorrect
+    args.c_index = [0, 1]
+    args.expression = ["[a, b", "c, d]"]
+    with pytest.raises(error):
+        csv_regex.callback_regex(args)
+    # two regex and only one of them is wrong
+    args.expression = ["[a-z]", "c(d"]
+    with pytest.raises(error):
+        csv_regex.callback_regex(args)
+    # empty string is incorrect regex too
+    args.expression = [""]
+    args.c_index = [0]
+    with pytest.raises(ValueError):
+        csv_regex.callback_regex(args)
