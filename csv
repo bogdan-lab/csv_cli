@@ -5,6 +5,7 @@ import argparse
 from csv_defaults import *
 from csv_sort import ColumnType, callback_sort
 from csv_show import callback_show
+from csv_regex import callback_regex
 
 
 def setup_parser(parser):
@@ -91,6 +92,15 @@ def setup_parser(parser):
                              help="If set then showing utility will desplay all table rows and columns except those defined by arguments above.")
 
     show_parser.set_defaults(callback=callback_show)
+
+    regex_parser = subparsers.add_parser("regex", parents=[file_params, column_selector],
+                                         help="Allows to select rows from the table by checking given "
+                                         "regular expressions in specified columns",
+                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    regex_parser.add_argument("-e", "--expression", action="append", type=str,
+                              default=DEFAULT_REGEX_EXPRESSION,
+                              help="Defines a regular expression which will be used for values in the previously stated column.")
+    regex_parser.set_defaults(callback=callback_regex)
 
 
 def main():
