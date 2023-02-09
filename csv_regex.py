@@ -79,15 +79,15 @@ def compile_regex(raw: str, ignore_case: bool) -> Pattern:
 def callback_regex(args: Namespace) -> None:
     '''Performs filtering table content by regular expressions'''
     check_arguments(args)
-    args.expression = list(compile_regex(el, args.ignore_case)
-                           for el in args.expression)
+    expressions = list(compile_regex(el, args.ignore_case)
+                       for el in args.expression)
     for file in args.files:
         file_data = read_file(file, not args.no_header)
         col_indexes = (args.c_index
                        if args.c_index is not None
                        else get_indexes_by_names(file_data.header, args.delimiter, args.c_name))
         file_data = select_rows(file_data, col_indexes,
-                                args.expression, args.delimiter)
+                                expressions, args.delimiter)
         print_table(file_data, file,
                     need_to_mark_filename=len(args.files) > 1,
                     inplace=args.inplace,
