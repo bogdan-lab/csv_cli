@@ -8,6 +8,7 @@ from utils_for_tests import merge_args, \
     create_default_file_params, \
     create_default_column_selector, \
     create_default_inplace_argument, \
+    create_default_hide_header_argument, \
     convert_argparser_action_to_bool, \
     create_file
 from csv_defaults import *
@@ -16,7 +17,8 @@ from csv_defaults import *
 def create_default_regex_args() -> Namespace:
     args = merge_args(create_default_file_params(),
                       create_default_column_selector(),
-                      create_default_inplace_argument())
+                      create_default_inplace_argument(),
+                      create_default_hide_header_argument())
     args.expression = DEFAULT_REGEX_EXPRESSION
     args.ignore_case = convert_argparser_action_to_bool(
         DEFAULT_REGEX_IGNORE_CASE_ACTION)
@@ -280,8 +282,48 @@ def test_check_inplace_flag(tmp_path) -> None:
         assert lines == [header, r1, r3, r5, r7]
 
 
-def test_hide_header_flag(tmp_path) -> None:
-    pass
+def test_hide_header_flag(tmp_path, capsys) -> None:
+    # with header
+    header = "String;Date"
+    r1 = "Q1; 2001-01-01"
+    r2 = "Q2; 2001-04-01"
+    r3 = "Q3; 2001-07-01"
+    r4 = "Q4; 2001-10-01"
+    r5 = "Q1; 2002-01-01"
+    r6 = "Q2; 2002-04-01"
+    r7 = "Q3; 2002-07-01"
+    r8 = "Q4; 2002-10-01"
+    fpath = create_file(tmp_path / "test.csv",
+                        (header, r1, r2, r3, r4, r5, r6, r7, r8))
+
+    args = create_default_regex_args()
+    args.files = [fpath]
+    args.delimiter = ';'
+    args.c_index = [0]
+    args.expression = ["4"]
+    args.hide_header = True
+
+    csv_regex.callback_regex(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r4, r8))
+
+    # if table modified inplace header is not deleted
+    args.inplace = True
+    args.expression = ["3"]
+    csv_regex.callback_regex(args)
+    with open(fpath) as f_input:
+        lines = list(el.strip() for el in f_input)
+        assert lines == [header, r3, r7]
+
+    # no header
+    fpath = create_file(tmp_path / "test.csv",
+                        (r1, r2, r3, r4, r5, r6, r7, r8))
+    args.no_header = True
+    args.inplace = False
+    args.expression = ["2"]
+    csv_regex.callback_regex(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r2, r6))
 
 
 def test_regex_selection_with_ignorecase_flag(tmp_path, capsys) -> None:

@@ -4,6 +4,7 @@ from argparse import Namespace
 from utils_for_tests import merge_args, \
     create_default_file_params, \
     create_default_column_selector, \
+    create_default_hide_header_argument, \
     convert_argparser_action_to_bool, \
     create_file
 from csv_defaults import *
@@ -12,7 +13,8 @@ import csv_show
 
 def create_default_show_args() -> Namespace:
     args = merge_args(create_default_file_params(),
-                      create_default_column_selector())
+                      create_default_column_selector(),
+                      create_default_hide_header_argument())
     args.r_head = DEFAULT_SHOW_ROW_HEAD_NUMBER
     args.r_tail = DEFAULT_SHOW_ROW_TAIL_NUMBER
     args.c_head = DEFAULT_SHOW_COL_HEAD_NUMBER
@@ -22,8 +24,6 @@ def create_default_show_args() -> Namespace:
     args.from_col = DEFAULT_SHOW_FROM_COL
     args.to_col = DEFAULT_SHOW_TO_COL
     args.r_index = DEFAULT_SHOW_ROW_INDEX
-    args.hide_header = convert_argparser_action_to_bool(
-        DEFAULT_HIDE_HEADER_ACTION)
     args.except_flag = convert_argparser_action_to_bool(
         DEFAULT_SHOW_EXCEPT_ACTION)
     return args

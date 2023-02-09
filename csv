@@ -97,7 +97,8 @@ def setup_parser(parser):
 
     show_parser.set_defaults(callback=callback_show)
 
-    regex_parser = subparsers.add_parser("regex", parents=[file_params, column_selector, inplace_argument],
+    regex_parser = subparsers.add_parser("regex", parents=[file_params, column_selector,
+                                                           inplace_argument, hide_header_argument],
                                          help="Allows to select rows from the table by checking given "
                                          "regular expressions in specified columns",
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)

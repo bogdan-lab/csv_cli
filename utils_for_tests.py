@@ -41,6 +41,13 @@ def create_default_inplace_argument() -> Namespace:
     return args
 
 
+def create_default_hide_header_argument() -> Namespace:
+    args = Namespace()
+    args.hide_header = convert_argparser_action_to_bool(
+        DEFAULT_HIDE_HEADER_ACTION)
+    return args
+
+
 def merge_args(*seq) -> Namespace:
     total = {}
     for val in seq:
