@@ -40,7 +40,8 @@ def setup_parser(parser):
                                            "In order to hide header user still have to mark that the table "
                                            "has one with corresponding flag")
 
-    sort_parser = subparsers.add_parser("sort", parents=[file_params, column_selector, inplace_argument],
+    sort_parser = subparsers.add_parser("sort", parents=[file_params, column_selector,
+                                                         inplace_argument, hide_header_argument],
                                         help="Allows to sort rows according to data in certain columns",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     sort_parser.add_argument("-as", "--c_type", action="append",

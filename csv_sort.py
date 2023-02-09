@@ -110,5 +110,5 @@ def callback_sort(args):
             with open(file, 'w') as fout:
                 fout.write(convert_to_text(file_data, hide_header=False))
         else:
-            print_to_std_out(convert_to_text(file_data, hide_header=True), file,
+            print_to_std_out(convert_to_text(file_data, hide_header=args.hide_header), file,
                              need_to_mark_filename=len(args.files) > 1)

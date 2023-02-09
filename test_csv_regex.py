@@ -311,7 +311,7 @@ def test_hide_header_flag(tmp_path, capsys) -> None:
     args.inplace = True
     args.expression = ["3"]
     csv_regex.callback_regex(args)
-    with open(fpath) as f_input:
+    with open(fpath, 'r') as f_input:
         lines = list(el.strip() for el in f_input)
         assert lines == [header, r3, r7]
 

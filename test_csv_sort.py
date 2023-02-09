@@ -7,6 +7,7 @@ from utils_for_tests import merge_args, \
     create_default_file_params, \
     create_default_column_selector, \
     create_default_inplace_argument, \
+    create_default_hide_header_argument, \
     convert_argparser_action_to_bool, \
     create_file
 
@@ -16,7 +17,8 @@ import csv_sort
 def create_default_sort_args() -> Namespace:
     args = merge_args(create_default_file_params(),
                       create_default_column_selector(),
-                      create_default_inplace_argument())
+                      create_default_inplace_argument(),
+                      create_default_hide_header_argument())
     args.c_type = DEFAULT_COLUMN_TYPE_LIST
     args.time_fmt = DEFAULT_TIME_FORMAT
     args.reverse = convert_argparser_action_to_bool(
@@ -458,3 +460,40 @@ def test_sort_stability_when_multiple_sort(tmp_path):
         data = fin.read()
 
     assert data == '\n'.join((header, r1, r3, r2, r4))
+
+
+def test_hide_header_option(tmp_path, capsys) -> None:
+    # with header
+    header = "One;Two;Three"
+    r1 = "1;1;1"
+    r2 = "2;2;2"
+    r3 = "3;3;3"
+    r4 = "4;4;4"
+    fpath = create_file(tmp_path / "test.csv", (header, r4, r2, r3, r1))
+
+    args = create_default_sort_args()
+    args.files = [fpath]
+    args.delimiter = ';'
+    args.c_index = [0]
+    args.c_type = ['number']
+    args.hide_header = True
+
+    csv_sort.callback_sort(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r3, r4))
+
+    # if we modify inplace hide_header is ignored
+    args.inplace = True
+    csv_sort.callback_sort(args)
+    with open(fpath, 'r') as f_input:
+        lines = list(el.strip() for el in f_input)
+        assert lines == [header, r1, r2, r3, r4]
+
+    # case with no header
+    fpath = create_file(tmp_path / "test_2.csv", (r2, r4, r3, r1))
+    args.no_header = True
+    args.inplace = False
+    args.files = [fpath]
+    csv_sort.callback_sort(args)
+    out = capsys.readouterr().out
+    assert out[:-1] == '\n'.join((r1, r2, r3, r4))
