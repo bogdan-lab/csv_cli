@@ -6,8 +6,7 @@ from re import compile, \
 
 from csv_read_write import FileContent, \
     read_file, \
-    convert_to_text, \
-    print_to_std_out
+    print_table
 from csv_utility import get_indexes_by_names, \
     has_duplicates
 
@@ -89,9 +88,7 @@ def callback_regex(args: Namespace) -> None:
                        else get_indexes_by_names(file_data.header, args.delimiter, args.c_name))
         file_data = select_rows(file_data, col_indexes,
                                 args.expression, args.delimiter)
-    if args.inplace:
-        with open(file, 'w') as out:
-            out.write(convert_to_text(file_data, hide_header=False))
-    else:
-        print_to_std_out(convert_to_text(file_data, hide_header=args.hide_header), file,
-                         need_to_mark_filename=len(args.files) > 1)
+        print_table(file_data, file,
+                    need_to_mark_filename=len(args.files) > 1,
+                    inplace=args.inplace,
+                    hide_header=args.hide_header)

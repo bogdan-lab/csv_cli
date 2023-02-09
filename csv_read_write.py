@@ -61,3 +61,19 @@ def get_column_count(fc: FileContent, delimiter: str) -> int:
     if len(fc.content) > 0:
         return fc.content[0].count(delimiter) + 1
     return 1
+
+
+def print_table(file_data: FileContent, filename: str,
+                need_to_mark_filename: bool, inplace: bool,
+                hide_header: bool) -> None:
+    '''Saves the table content into the file or prints it into the stdout
+    according to the given parameters.
+    need_to_mark_filename is relevant only for printing into std out case.
+    If it is true than the file content will be prepended by the file name.
+    '''
+    if inplace:
+        with open(filename, 'w') as out:
+            out.write(convert_to_text(file_data, hide_header=False))
+        return
+    print_to_std_out(convert_to_text(file_data, hide_header), filename,
+                     need_to_mark_filename)

@@ -5,8 +5,7 @@ import math
 
 from csv_read_write import FileContent, \
     read_file, \
-    convert_to_text, \
-    print_to_std_out
+    print_table
 from csv_utility import get_indexes_by_names, \
     has_duplicates
 
@@ -96,7 +95,7 @@ def check_arguments(args) -> None:
 
 
 def callback_sort(args):
-    '''Performes sorting files on the command line request'''
+    '''Performs sorting files on the command line request'''
     check_arguments(args)
     for file in args.files:
         file_data = read_file(file, not args.no_header)
@@ -106,9 +105,7 @@ def callback_sort(args):
                                                args.delimiter, args.c_name))
         file_data = sort_content(file_data, col_index, args.c_type,
                                  args.delimiter, args.reverse, args.time_fmt)
-        if args.inplace:
-            with open(file, 'w') as fout:
-                fout.write(convert_to_text(file_data, hide_header=False))
-        else:
-            print_to_std_out(convert_to_text(file_data, hide_header=args.hide_header), file,
-                             need_to_mark_filename=len(args.files) > 1)
+        print_table(file_data, file,
+                    need_to_mark_filename=len(args.files) > 1,
+                    inplace=args.inplace,
+                    hide_header=args.hide_header)
