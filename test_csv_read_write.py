@@ -91,15 +91,20 @@ def test_get_column_count_general(tmp_path):
 
 def test_convert_to_text():
     test = crw.FileContent(None, [])  # empty file
-    assert len(crw.convert_to_text(test)) == 0
+    assert len(crw.convert_to_text(test, hide_header=False)) == 0
+    assert len(crw.convert_to_text(test, hide_header=True)) == 0
     test = crw.FileContent('header', [])  # with header but no content
-    assert crw.convert_to_text(test) == 'header'
+    assert crw.convert_to_text(test, hide_header=False) == 'header'
+    assert crw.convert_to_text(test, hide_header=True) == ''
     # no header with content
     test = crw.FileContent(None, ['one', 'two', 'three'])
-    assert crw.convert_to_text(test) == 'one\ntwo\nthree'
+    assert crw.convert_to_text(test, hide_header=False) == 'one\ntwo\nthree'
+    assert crw.convert_to_text(test, hide_header=True) == 'one\ntwo\nthree'
     # empty header with content
     test = crw.FileContent("", ['one', 'two', 'three'])
-    assert crw.convert_to_text(test) == '\none\ntwo\nthree'
+    assert crw.convert_to_text(test, hide_header=False) == 'one\ntwo\nthree'
+    assert crw.convert_to_text(test, hide_header=True) == 'one\ntwo\nthree'
     # with header and content
     test = crw.FileContent('header', ['one'])
-    assert crw.convert_to_text(test) == 'header\none'
+    assert crw.convert_to_text(test, hide_header=False) == 'header\none'
+    assert crw.convert_to_text(test, hide_header=True) == 'one'

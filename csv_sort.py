@@ -108,7 +108,7 @@ def callback_sort(args):
                                  args.delimiter, args.reverse, args.time_fmt)
         if args.inplace:
             with open(file, 'w') as fout:
-                fout.write(convert_to_text(file_data))
+                fout.write(convert_to_text(file_data, hide_header=False))
         else:
-            print_to_std_out(convert_to_text(file_data), file,
+            print_to_std_out(convert_to_text(file_data, hide_header=True), file,
                              need_to_mark_filename=len(args.files) > 1)

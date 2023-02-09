@@ -82,10 +82,10 @@ def filter_content(content: Tuple[str], delimiter: str, col_indexes: List[int], 
 
 
 def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List[int],
-               delimiter: str, hide_header: bool) -> FileContent:
+               delimiter: str) -> FileContent:
     '''Forms new FileContent object which containes only selected column indexes'''
     new_header = None
-    if file_data.header and not hide_header:
+    if file_data.header:
         new_header = select_from_row(file_data.header, delimiter, col_indexes)
     return FileContent(new_header,
                        tuple(filter_content(file_data.content, delimiter, col_indexes, row_indexes)))
@@ -152,6 +152,6 @@ def callback_show(args):
             col_indexes = invert_indexes(col_indexes, column_count)
             row_indexes = invert_indexes(row_indexes, row_count)
         file_data = apply_show(file_data, row_indexes,
-                               col_indexes, args.delimiter, args.hide_header)
-        print_to_std_out(convert_to_text(file_data), file,
+                               col_indexes, args.delimiter)
+        print_to_std_out(convert_to_text(file_data, args.hide_header), file,
                          need_to_mark_filename=len(args.files) > 1)

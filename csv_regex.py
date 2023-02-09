@@ -91,7 +91,7 @@ def callback_regex(args: Namespace) -> None:
                                 args.expression, args.delimiter)
     if args.inplace:
         with open(file, 'w') as out:
-            out.write(convert_to_text(file_data))
+            out.write(convert_to_text(file_data, hide_header=False))
     else:
-        print_to_std_out(convert_to_text(file_data), file,
+        print_to_std_out(convert_to_text(file_data, hide_header=False), file,
                          need_to_mark_filename=len(args.files) > 1)

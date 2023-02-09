@@ -7,20 +7,26 @@ class FileContent(NamedTuple):
     content: Tuple[str]
 
 
-def convert_to_text(file_data: FileContent) -> str:
-    '''Puts all data from the file content class into single string'''
-    if file_data.header is None and len(file_data.content) == 0:
+def convert_to_text(file_data: FileContent, hide_header: bool) -> str:
+    '''Puts all data from the file content class into single string.
+    If hide_header is True there will be no header in the result
+    regardless whether there was any header initially.
+    '''
+    # Here I do not consider empty line in header as a valid header
+    # and allow to throw it away in the text generation
+    header = None if hide_header else file_data.header
+    if not header and not file_data.content:
         # empty file case
         return ""
-    elif len(file_data.content) == 0:
+    elif header and not file_data.content:
         # Header only case
-        return file_data.header
-    elif file_data.header is None and len(file_data.content) != 0:
+        return header
+    elif not header and file_data.content:
         # File without header
         return '\n'.join(file_data.content)
     else:
         # File with header and content
-        return '\n'.join((file_data.header, *file_data.content))
+        return '\n'.join((header, *file_data.content))
 
 
 def read_file(filename: str, has_header: bool) -> FileContent:
