@@ -32,6 +32,14 @@ def setup_parser(parser):
     inplace_argument.add_argument("-i", "--inplace", action=DEFAULT_INPLACE_ACTION,
                                   help="If set the operation will be performed inplace")
 
+    hide_header_argument = argparse.ArgumentParser(add_help=False)
+    hide_header_argument.add_argument("--hide_header", action=DEFAULT_HIDE_HEADER_ACTION,
+                                      help="If set header will not be present in the std out output of the request "
+                                           "even if the header was in table initially. Note that if chosen "
+                                           "operation is performed inplace this flag will have no effect."
+                                           "In order to hide header user still have to mark that the table "
+                                           "has one with corresponding flag")
+
     sort_parser = subparsers.add_parser("sort", parents=[file_params, column_selector, inplace_argument],
                                         help="Allows to sort rows according to data in certain columns",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -46,7 +54,7 @@ def setup_parser(parser):
                              help="If set sorting order will be reversed - the first element will be the largest one.")
     sort_parser.set_defaults(callback=callback_sort)
 
-    show_parser = subparsers.add_parser("show", parents=[file_params, column_selector],
+    show_parser = subparsers.add_parser("show", parents=[file_params, column_selector, hide_header_argument],
                                         help="Allows to selectively show table content",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     show_parser.add_argument("--r_head", action="store", type=int, default=DEFAULT_SHOW_ROW_HEAD_NUMBER,
@@ -84,10 +92,6 @@ def setup_parser(parser):
                              help="Exact index of row which will be displayed. "
                                   "Index numeration starts from 0 and does not "
                                   "take into account header if it is present.")
-    show_parser.add_argument("--hide_header", action=DEFAULT_SHOW_HIDE_HEADER_ACTION,
-                             help="If set, header will not be displayed even if it is present in the table."
-                                  "Note that in order to hide the header user still need to mark "
-                                  "that the table contains one.")
     show_parser.add_argument("--except", dest="except_flag", action=DEFAULT_SHOW_EXCEPT_ACTION,
                              help="If set then showing utility will desplay all table rows and columns except those defined by arguments above.")
 

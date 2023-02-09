@@ -23,7 +23,7 @@ def create_default_show_args() -> Namespace:
     args.to_col = DEFAULT_SHOW_TO_COL
     args.r_index = DEFAULT_SHOW_ROW_INDEX
     args.hide_header = convert_argparser_action_to_bool(
-        DEFAULT_SHOW_HIDE_HEADER_ACTION)
+        DEFAULT_HIDE_HEADER_ACTION)
     args.except_flag = convert_argparser_action_to_bool(
         DEFAULT_SHOW_EXCEPT_ACTION)
     return args
