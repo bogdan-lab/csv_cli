@@ -5,7 +5,7 @@ from utils_for_tests import merge_args, \
     create_default_file_params, \
     create_default_column_selector, \
     create_default_hide_header_argument, \
-    convert_argparser_action_to_bool, \
+    convert_argparse_action_to_bool, \
     create_file
 from csv_defaults import *
 import csv_show
@@ -24,7 +24,7 @@ def create_default_show_args() -> Namespace:
     args.from_col = DEFAULT_SHOW_FROM_COL
     args.to_col = DEFAULT_SHOW_TO_COL
     args.r_index = DEFAULT_SHOW_ROW_INDEX
-    args.except_flag = convert_argparser_action_to_bool(
+    args.except_flag = convert_argparse_action_to_bool(
         DEFAULT_SHOW_EXCEPT_ACTION)
     return args
 
@@ -722,7 +722,7 @@ def test_show_head_tail_and_ranges(tmp_path, capsys):
     args.files = [fpath]
     args.delimiter = ';'
 
-    # No crossection
+    # No intersection
     args.r_head = 1
     args.r_tail = 1
     args.from_row = [1, 3]
@@ -731,7 +731,7 @@ def test_show_head_tail_and_ranges(tmp_path, capsys):
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r4, r5))
 
-    # With crossection
+    # With intersection
     args.r_head = 3
     args.r_tail = 3
     args.from_row = [1, 2, 3, 4]
@@ -791,7 +791,7 @@ def test_show_all_row_filters_together(tmp_path, capsys):
     args.files = [fpath]
     args.delimiter = ';'
 
-    # No crossection
+    # No intersection
     args.r_head = 1
     args.r_tail = 1
     args.from_row = [1]
@@ -801,7 +801,7 @@ def test_show_all_row_filters_together(tmp_path, capsys):
     out = capsys.readouterr().out
     assert out[:-1] == '\n'.join((header, r1, r2, r4, r5))
 
-    # With crossection
+    # With intersection
     args.r_head = 2
     args.r_tail = 2
     args.from_row = [1, 2]
@@ -830,7 +830,7 @@ def test_show_everything_without_header(tmp_path, capsys):
     assert out[:-1] == '\n'.join((r1, r2, r3, r4, r5))
 
 
-def test_show_hide_header_whith_no_rows(tmp_path, capsys):
+def test_show_hide_header_with_no_rows(tmp_path, capsys):
     header = "Int;Double;String"
     fpath = create_file(tmp_path / "test.csv", (header,))
 
@@ -940,7 +940,7 @@ def test_show_column_head_tail_and_particular(tmp_path, capsys):
     args.files = [fpath]
     args.delimiter = ','
 
-    # No crossection
+    # No intersection
     exp_header = "one,three,four,five"
     exp_r1 = "1,3,4,5"
     exp_r2 = "11,13,14,15"
@@ -957,7 +957,7 @@ def test_show_column_head_tail_and_particular(tmp_path, capsys):
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
 
-    # With croseection
+    # With intersection
     exp_header = "three,four,five"
     exp_r1 = "3,4,5"
     exp_r2 = "13,14,15"
@@ -995,7 +995,7 @@ def test_show_column_ranges_and_all(tmp_path, capsys):
     args.files = [fpath]
     args.delimiter = ','
 
-    # No crossection
+    # No intersection
     exp_header = "one,three,four,five"
     exp_r1 = "1,3,4,5"
     exp_r2 = "11,13,14,15"
@@ -1011,7 +1011,7 @@ def test_show_column_ranges_and_all(tmp_path, capsys):
     assert out[:-1] == '\n'.join((exp_header, exp_r1,
                                  exp_r2, exp_r3, exp_r4, exp_r5, exp_r6))
 
-    # With croseection
+    # With intersection
     exp_header = "three,four,five"
     exp_r1 = "3,4,5"
     exp_r2 = "13,14,15"
@@ -1044,7 +1044,7 @@ def test_show_column_ranges_and_all(tmp_path, capsys):
 
 
 def test_show_except_show_all(tmp_path, capsys):
-    header = "One,Twom,Three,Four,Five"
+    header = "One,Two,Three,Four,Five"
     r1 = "1,2,3,4,5"
     r2 = "11,22,33,44,55"
     r3 = "12,23,34,45,56"
@@ -1076,7 +1076,7 @@ def test_show_except_show_all(tmp_path, capsys):
 
 
 def test_show_except_show_nothing(tmp_path, capsys):
-    header = "One,Twom,Three,Four,Five"
+    header = "One,Two,Three,Four,Five"
     r1 = "1,2,3,4,5"
     r2 = "11,22,33,44,55"
     r3 = "12,23,34,45,56"
@@ -1141,7 +1141,7 @@ def test_show_columns_set_as_mix_fo_index_and_name(tmp_path, capsys):
     args.files = [fpath]
     args.delimiter = ';'
 
-    # No crossection
+    # No intersection
     exp_header = "two;three"
     exp_r = "2;3"
 

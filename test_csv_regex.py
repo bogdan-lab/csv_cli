@@ -9,7 +9,7 @@ from utils_for_tests import merge_args, \
     create_default_column_selector, \
     create_default_inplace_argument, \
     create_default_hide_header_argument, \
-    convert_argparser_action_to_bool, \
+    convert_argparse_action_to_bool, \
     create_file
 from csv_defaults import *
 
@@ -20,7 +20,7 @@ def create_default_regex_args() -> Namespace:
                       create_default_inplace_argument(),
                       create_default_hide_header_argument())
     args.expression = DEFAULT_REGEX_EXPRESSION
-    args.ignore_case = convert_argparser_action_to_bool(
+    args.ignore_case = convert_argparse_action_to_bool(
         DEFAULT_REGEX_IGNORE_CASE_ACTION)
     return args
 

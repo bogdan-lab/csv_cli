@@ -59,7 +59,7 @@ def setup_parser(parser):
                                         help="Allows to selectively show table content",
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     show_parser.add_argument("--r_head", action="store", type=int, default=DEFAULT_SHOW_ROW_HEAD_NUMBER,
-                             help="Will display given number of top rows in the table. Value is normalzied to the row number.")
+                             help="Will display given number of top rows in the table. Value is normalized to the row number.")
     show_parser.add_argument("--r_tail", action="store", type=int, default=DEFAULT_SHOW_ROW_TAIL_NUMBER,
                              help="Will display given number of bottom rows in the table. Value is normalized to the row number.")
     show_parser.add_argument("--c_head", action="store", type=int, default=DEFAULT_SHOW_COL_HEAD_NUMBER,
@@ -80,12 +80,12 @@ def setup_parser(parser):
                                   "Row numeration starts from 0.")
     show_parser.add_argument("--from_col", "-fc", action="append", type=int,
                              default=DEFAULT_SHOW_FROM_COL,
-                             help="Will display all columns between the given column index andthe one defined by the next 'to_col' value."
+                             help="Will display all columns between the given column index and the one defined by the next 'to_col' value."
                                   "The given col index is included into the displayed range. "
                                   "Column numeration starts from 0.")
     show_parser.add_argument("--to_col", "-tc", action="append", type=int,
                              default=DEFAULT_SHOW_TO_COL,
-                             help="Will deilsplay all columns between the previously set `from_col` index and the given one. "
+                             help="Will display all columns between the previously set `from_col` index and the given one. "
                                   "The given column index is NOT included into the displayed range. "
                                   "Column numeration starts from 0.")
     show_parser.add_argument("--r_index", "-ri", action="append", type=int,
@@ -94,7 +94,7 @@ def setup_parser(parser):
                                   "Index numeration starts from 0 and does not "
                                   "take into account header if it is present.")
     show_parser.add_argument("--except", dest="except_flag", action=DEFAULT_SHOW_EXCEPT_ACTION,
-                             help="If set then showing utility will desplay all table rows and columns except those defined by arguments above.")
+                             help="If set then showing utility will display all table rows and columns except those defined by arguments above.")
 
     show_parser.set_defaults(callback=callback_show)
 

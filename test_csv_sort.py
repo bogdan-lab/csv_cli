@@ -8,7 +8,7 @@ from utils_for_tests import merge_args, \
     create_default_column_selector, \
     create_default_inplace_argument, \
     create_default_hide_header_argument, \
-    convert_argparser_action_to_bool, \
+    convert_argparse_action_to_bool, \
     create_file
 
 import csv_sort
@@ -21,7 +21,7 @@ def create_default_sort_args() -> Namespace:
                       create_default_hide_header_argument())
     args.c_type = DEFAULT_COLUMN_TYPE_LIST
     args.time_fmt = DEFAULT_TIME_FORMAT
-    args.reverse = convert_argparser_action_to_bool(
+    args.reverse = convert_argparse_action_to_bool(
         DEFAULT_SORT_REVERSE_ACTION)
     return args
 
@@ -305,13 +305,13 @@ def test_sort_according_to_the_column_with_nan(tmp_path):
     assert data == '\n'.join((r3, r1, r4, r2, r5))
 
 
-def test_sort_when_convertion_fails_1(tmp_path):
+def test_sort_when_conversion_fails_1(tmp_path):
     r1 = "5; a"
     r2 = "-; b"
     r3 = "; d"
     r4 = "0; v"
     r5 = "nan; and"
-    r6 = "definetely not a number; num"
+    r6 = "definitely not a number; num"
     fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5, r6))
 
     args = create_default_sort_args()
@@ -330,13 +330,13 @@ def test_sort_when_convertion_fails_1(tmp_path):
     assert data == '\n'.join((r4, r1, r2, r3, r5, r6))
 
 
-def test_sort_when_convertion_fails_2(tmp_path):
+def test_sort_when_conversion_fails_2(tmp_path):
     r1 = "2010-01-01; a"
     r2 = "-; b"
     r3 = "; d"
     r4 = "2008-09-12; v"
     r5 = "nan; and"
-    r6 = "definetely not a number; num"
+    r6 = "definitely not a number; num"
     fpath = create_file(tmp_path / "test.csv", (r1, r2, r3, r4, r5, r6))
 
     args = create_default_sort_args()
@@ -398,7 +398,7 @@ def test_sort_single_number_column(tmp_path):
 
 
 def test_sort_single_string_column(tmp_path):
-    values = ("one", "two", "abcd", "elleven", "buiding")
+    values = ("one", "two", "abcd", "eleven", "building")
     fpath = create_file(tmp_path / "test.csv", values)
 
     args = create_default_sort_args()

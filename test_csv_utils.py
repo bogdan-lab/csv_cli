@@ -4,7 +4,7 @@ from csv_utility import select_from_row, \
     ranges_to_int_sequence, \
     get_indexes_by_names, \
     has_duplicates, \
-    crossect_ranges, \
+    cross_ranges, \
     build_ranges_for_singles, \
     build_ranges_for_begins_ends, \
     merge_ranges, \
@@ -86,7 +86,7 @@ def test_get_index_by_names_duplicates():
         get_indexes_by_names(header, ';', ['two', 'two'])
 
 
-def test_get_index_by_names_hidden_diplicates():
+def test_get_index_by_names_hidden_duplicates():
     header = "one; two; three"
     with pytest.raises(ValueError):
         get_indexes_by_names(header, ';', ["     two", "two     "])
@@ -100,8 +100,8 @@ def test_select_from_row():
     assert select_from_row("1;2;3;4;5", ";", [1]) == "2"
     assert select_from_row("1;2;3;4;5", ",", [0]) == "1;2;3;4;5"
     assert select_from_row("1,2,3,4,5", ",", [4]) == "5"
-    assert select_from_row("onetwoonethree", "one", [
-        1, 2]) == "twoonethree"
+    assert select_from_row("ONEtwoONEthree", "ONE", [
+        1, 2]) == "twoONEthree"
     assert select_from_row("1;2;3;4;5", ";", []) == ""
 
 
@@ -129,25 +129,25 @@ def test_elect_from_row_order_duplicates():
     assert select_from_row("1;2;3;4", ';', [0, 2, 2, 3]) == "1;3;3;4"
 
 
-def test_crossect_ranges_empty():
-    res = crossect_ranges((1, 1), (2, 2))
+def test_cross_ranges_empty():
+    res = cross_ranges((1, 1), (2, 2))
     assert res[0] == res[1]
-    res = crossect_ranges((1, 1), (2, 2))
+    res = cross_ranges((1, 1), (2, 2))
     assert res[0] == res[1]
-    res = crossect_ranges((1, 1), (1, 5))
+    res = cross_ranges((1, 1), (1, 5))
     assert res[0] == res[1]
-    res = crossect_ranges((3, 3), (1, 5))
+    res = cross_ranges((3, 3), (1, 5))
     assert res[0] == res[1]
-    res = crossect_ranges((1, 5), (3, 3))
+    res = cross_ranges((1, 5), (3, 3))
     assert res[0] == res[1]
 
 
-def test_crossect_ranges_general():
-    assert crossect_ranges((1, 5), (3, 4)) == (3, 4)
-    assert crossect_ranges((1, 4), (3, 5)) == (3, 4)
-    assert crossect_ranges((1, 4), (3, 5)) == (3, 4)
-    assert crossect_ranges((3, 5), (1, 4)) == (3, 4)
-    res = crossect_ranges((1, 3), (4, 5))
+def test_cross_ranges_general():
+    assert cross_ranges((1, 5), (3, 4)) == (3, 4)
+    assert cross_ranges((1, 4), (3, 5)) == (3, 4)
+    assert cross_ranges((1, 4), (3, 5)) == (3, 4)
+    assert cross_ranges((3, 5), (1, 4)) == (3, 4)
+    res = cross_ranges((1, 3), (4, 5))
     assert res[0] == res[1]
 
 

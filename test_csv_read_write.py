@@ -11,14 +11,14 @@ def test_read_empty_file(tmp_path):
     assert res.header == ""
     assert res.content is not None
     assert len(res.content) == 0
-    # whithout header
+    # without header
     res = crw.read_file(fpath, has_header=False)
     assert res.header is None
     assert res.content is not None
     assert len(res.content) == 0
 
 
-def test_raed_filled_file(tmp_path):
+def test_read_filled_file(tmp_path):
     header = "   one   ,   two   ,   three   "
     r1 = "1,   2   , 3    "
     r2 = "       4,5,6"

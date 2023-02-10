@@ -13,9 +13,9 @@ def get_indexes_by_names(header: str, delimiter: str, col_names: List[int]) -> L
        Note that index list will be in the same order as list of names.
        Comparison is case sensitive, but ignores trailing white spaces
        ValueError will be raised if:
-       * there is a name which cannot be found in the haeder
+       * there is a name which cannot be found in the header
        * there are duplicate names in the col_names argument
-       * there is more than one occurrance the name from col_names in header
+       * there is more than one occurrence the name from col_names in header
        If function return successfully there is no duplicates in the result list
     '''
     req_names = [el.strip() for el in col_names]
@@ -81,9 +81,9 @@ def ranges_to_int_sequence(ranges: List[Tuple[int]]) -> List[int]:
     return res
 
 
-def crossect_ranges(lhs: Tuple[int], rhs: Tuple[int]) -> Tuple[int]:
-    '''Accepts two ranges defined by semiinterval (the first value is included and the second is not),
-       and returns the corossection of these two ranges as a semiinterval.
+def cross_ranges(lhs: Tuple[int], rhs: Tuple[int]) -> Tuple[int]:
+    '''Accepts two ranges defined by semi-interval (the first value is included and the second is not),
+       and returns the intersection of these two ranges as a semi-interval.
        Function assumes that input ranges are valid: first <= second
     '''
     if rhs[0] >= lhs[1] or lhs[0] >= rhs[1]:
@@ -109,11 +109,11 @@ def build_ranges_for_begins_ends(begins: List[int], ends: List[int]) -> List[Tup
     Function does not filter duplicates if those exists
     '''
     if len(begins) != len(ends):
-        raise ValueError("Range edges lists have different lengthes.")
+        raise ValueError("Range edges lists have different lengths.")
     return list(sorted((b, max(b, e)) for b, e in zip(begins, ends)))
 
 
-def merge_ranges(*rngs: Union[Tuple[int], List[int]]) -> List[Tuple[int]]:
+def merge_ranges(*ranges: Union[Tuple[int], List[int]]) -> List[Tuple[int]]:
     '''Put all ranges from the input into one list of ranges sorted by the left edge.
     One can pass separate ranges into this function, defined by a tuple
     Or one can pass list of such tuples.
@@ -121,7 +121,7 @@ def merge_ranges(*rngs: Union[Tuple[int], List[int]]) -> List[Tuple[int]]:
     Function allows duplicate and empty ranges in the result list
     '''
     res = []
-    for rng in rngs:
+    for rng in ranges:
         if isinstance(rng, tuple):
             res.append(rng)
         elif isinstance(rng, list):

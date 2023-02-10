@@ -93,7 +93,7 @@ For example, let us sort `test.csv` content by column 0.
 ; d
 0; v
 nan; and
-definetely not a number; num
+definitely not a number; num
 ```
 The command:
 ```
@@ -111,7 +111,7 @@ The output of the command will be:
 -; b
 ; d
 nan; and
-definetely not a number; num
+definitely not a number; num
 ```
 Note that relative order of rows with not convertible values is preserved.
 
@@ -138,7 +138,7 @@ User can set several ranges by defining them one after another in the command li
 (`.... -fc 3 -tc 10 -fc 20 -tc 40 ....`)
 3. User can select particular columns to be displayed. 
 This can be done by arguments `-c_name`(`-cn`) and `-c_index`(`-ci`).
-The first argument allows to select columns by name, when the secnd one defines indexes of columns which will be displayed.
+The first argument allows to select columns by name, when the second one defines indexes of columns which will be displayed.
 One can mix these arguments and use each of them several times in order to select several columns.
 Column indexing starts from `0`.
 
@@ -261,8 +261,8 @@ Date;String;Int;Double
 ```
 
 User can mix row and column selections in a single call in order to minimize his focus area when studying the table.
-Also, there is a invertion flag `--except`.
-If this flag is set to `true` utility will display all rows and columns in the table which DO NOT sutisfy selection requirements in the call.
+Also, there is a inversion flag `--except`.
+If this flag is set to `true` utility will display all rows and columns in the table which DO NOT satisfy selection requirements in the call.
 For example, `test.csv` content:
 ```
 Date;String;Int;Double
@@ -274,7 +274,7 @@ Date;String;Int;Double
 2011-07-11;world;3;2.56
 2001-04-28;!;3;13.2
 ```
-Then selecting everythin except the middle column and the middle row will look like this:
+Then selecting everything except the middle column and the middle row will look like this:
 ```
 ./csv show --except -cn String -ri 3 -d ';' -f test.csv
 ```

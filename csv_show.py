@@ -8,7 +8,7 @@ from csv_read_write import FileContent, \
 from csv_utility import select_from_row, \
     build_ranges_for_begins_ends, \
     build_ranges_for_singles, \
-    crossect_ranges, \
+    cross_ranges, \
     ranges_to_int_sequence, \
     has_duplicates, \
     invert_indexes, \
@@ -83,7 +83,7 @@ def filter_content(content: Tuple[str], delimiter: str, col_indexes: List[int], 
 
 def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List[int],
                delimiter: str) -> FileContent:
-    '''Forms new FileContent object which containes only selected column indexes'''
+    '''Forms new FileContent object which contains only selected column indexes'''
     new_header = None
     if file_data.header:
         new_header = select_from_row(file_data.header, delimiter, col_indexes)
@@ -93,7 +93,7 @@ def apply_show(file_data: FileContent, row_indexes: List[int], col_indexes: List
 
 def calculate_indexes(full_range: Tuple[int], head: int, tail: int, begins: List[int],
                       ends: List[int], indexes: List[int]) -> List[int]:
-    '''Calculates the exact indexes which should be displaid from the full_range based on all
+    '''Calculates the exact indexes which should be displayed from the full_range based on all
     input ranges nad particular indexes.
     Function guarantees that the return list will contain only unique values from within full_range
     and they will be sorted.
@@ -102,15 +102,15 @@ def calculate_indexes(full_range: Tuple[int], head: int, tail: int, begins: List
         return ranges_to_int_sequence([full_range])
     res = []
     if head is not None:
-        res.append(crossect_ranges(full_range, (full_range[0], head)))
+        res.append(cross_ranges(full_range, (full_range[0], head)))
     if tail is not None:
-        res.append(crossect_ranges(
+        res.append(cross_ranges(
             full_range, (full_range[1] - tail, full_range[1])))
     if begins is not None:  # assume that in that case ends is also not None
-        res.extend([crossect_ranges(full_range, el)
+        res.extend([cross_ranges(full_range, el)
                    for el in build_ranges_for_begins_ends(begins, ends)])
     if indexes is not None:
-        res.extend([crossect_ranges(full_range, el)
+        res.extend([cross_ranges(full_range, el)
                    for el in build_ranges_for_singles(indexes)])
     res.sort()
     return ranges_to_int_sequence(res)
@@ -135,7 +135,7 @@ def merge_named_and_pure_column_indexes(pure: List[int], named: List[str],
 
 
 def callback_show(args):
-    '''Performes columns selection from file according the the given arguments'''
+    '''Performs columns selection from file according the the given arguments'''
     check_arguments(args)
     for file in args.files:
         file_data = read_file(file, not args.no_header)
